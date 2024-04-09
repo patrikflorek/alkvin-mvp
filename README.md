@@ -19,6 +19,7 @@ The application requires the following dependencies:
 - OpenAI 1.13+
 - PyAudio 0.2.14
 - Python-dotenv 1.0.1
+- peewee 3.14+
 
 
 ## Installation

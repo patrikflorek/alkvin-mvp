@@ -9,9 +9,9 @@ Example usage:
     card = UserMessageCard(
         user_audio_file="user_voice_audio.wav",
         user_audio_created_at="2022-01-02 09:00:00",
-        message_sent_at="2022-01-02 09:01:00",
-        transcript_text="Hello, I need your help.",
-        transcript_received_at="2022-01-02 09:02:00"
+        user_audio_transcript="Hello, I need your help.",
+        user_audio_transcript_received_at="2022-01-02 09:02:00"
+        user_message_sent_at="2022-01-02 09:01:00",
     )
 """
 
@@ -30,8 +30,8 @@ Builder.load_string(
     orientation: "horizontal"
     md_bg_color: app.theme_cls.accent_light
     radius: "25dp", "25dp", "25dp", 0
-    elevation: 1 if self.message_sent_at else 0
-    opacity: 1 if self.message_sent_at else 0.8
+    elevation: 1 if self.user_message_sent_at else 0
+    opacity: 1 if self.user_message_sent_at else 0.8
     adaptive_height: True
 
     MDBoxLayout:
@@ -46,9 +46,9 @@ Builder.load_string(
 
         MDBoxLayout:
             size_hint_y: None
-            height: 0 if root.transcript_received_at else self.minimum_height
-            opacity: 0 if root.transcript_received_at else 1
-            disabled: root.transcript_received_at
+            height: 0 if root.user_audio_transcript_received_at else self.minimum_height
+            opacity: 0 if root.user_audio_transcript_received_at else 1
+            disabled: root.user_audio_transcript_received_at
             
             MDIconButton:
                 icon: "typewriter"
@@ -58,18 +58,18 @@ Builder.load_string(
 
         MDBoxLayout:
             size_hint_y: None
-            height: self.minimum_height if root.transcript_received_at else 0
-            opacity: 1 if root.transcript_received_at else 0
+            height: self.minimum_height if root.user_audio_transcript_received_at else 0
+            opacity: 1 if root.user_audio_transcript_received_at else 0
             
             MDLabel:
-                text: root.transcript_text
+                text: root.user_audio_transcript_text
                 adaptive_height: True
     
     MDRelativeLayout:
         size_hint_x: None
-        width: 0 if root.message_sent_at else "48dp"
-        disabled: root.message_sent_at
-        opacity: 0 if root.message_sent_at else 1
+        width: 0 if root.user_message_sent_at else "48dp"
+        disabled: root.user_message_sent_at
+        opacity: 0 if root.user_message_sent_at else 1
 
         MDAnchorLayout:
             anchor_x: "right"
@@ -102,22 +102,22 @@ class UserMessageCard(MDCard):
     user_audio_file = StringProperty()
     user_audio_path = StringProperty()
     user_audio_created_at = StringProperty()
-    message_sent_at = StringProperty()
-    transcript_text = StringProperty()
-    transcript_received_at = StringProperty()
+    user_audio_transcript = StringProperty()
+    user_audio_transcript_received_at = StringProperty()
+    user_message_sent_at = StringProperty()
 
     def __init__(
         self,
         user_audio_file,
         user_audio_created_at,
-        message_sent_at,
-        transcript_text,
-        transcript_received_at,
+        user_audio_transcript,
+        user_audio_transcript_received_at,
+        user_message_sent_at,
         **kwargs
     ):
         super().__init__(**kwargs)
         self.user_audio_file = user_audio_file
         self.user_audio_created_at = user_audio_created_at
-        self.message_sent_at = message_sent_at
-        self.transcript_text = transcript_text
-        self.transcript_received_at = transcript_received_at
+        self.user_audio_transcript = user_audio_transcript
+        self.user_audio_transcript_received_at = user_audio_transcript_received_at
+        self.user_message_sent_at = user_message_sent_at

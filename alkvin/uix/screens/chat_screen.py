@@ -168,9 +168,9 @@ class ChatScreen(MDScreen):
                     "role": "user",
                     "user_audio_file": "adstfswrrf.wav",
                     "user_audio_created_at": "2020-07-01T12:01:00",
-                    "message_sent_at": "2020-07-01T12:01:02",
-                    "transcript_text": "Hello, I'm a human. I'm here to help you with any questions you may have about the product. How can I help you today?",
-                    "transcript_received_at": "2020-07-01T12:02:00",
+                    "user_message_sent_at": "2020-07-01T12:01:02",
+                    "user_audio_transcript": "Hello, I'm a human. I'm here to help you with any questions you may have about the product. How can I help you today?",
+                    "user_transcript_received_at": "2020-07-01T12:02:00",
                 },
                 {
                     "role": "assistant",
@@ -183,9 +183,9 @@ class ChatScreen(MDScreen):
                     "role": "user",
                     "user_audio_file": "kdqwservfy.wav",
                     "user_audio_created_at": "2020-07-01T12:08:30",
-                    "message_sent_at": "2020-07-01T12:08:32",
-                    "transcript_text": "I have a question about the product. Can you tell me more about the features?",
-                    "transcript_received_at": "2020-07-01T12:09:00",
+                    "user_message_sent_at": "2020-07-01T12:08:32",
+                    "user_audio_transcript": "I have a question about the product. Can you tell me more about the features?",
+                    "user_transcript_received_at": "2020-07-01T12:09:00",
                 },
                 {
                     "role": "assistant",
@@ -198,16 +198,17 @@ class ChatScreen(MDScreen):
                     "role": "user",
                     "user_audio_file": "deasdfdpacvx.wav",
                     "user_audio_created_at": "2020-07-01T12:12:30",
-                    "message_sent_at": "",
-                    "transcript_text": "Thank you for the information. I'm interested in purchasing the product. Can you tell me how I can place an order?",
-                    "transcript_received_at": "2020-07-01T12:12:32",
+                    "user_message_sent_at": "",
+                    "user_audio_transcript": "Thank you for the information. I'm interested in purchasing the product. Can you tell me how I can place an order?",
+                    "user_audio_transcript_received_at": "2020-07-01T12:12:32",
                 },
                 {
                     "role": "user",
                     "user_audio_file": "rgsonnksqeib.wav",
                     "user_audio_created_at": "2020-07-01T12:12:34",
-                    "message_sent_at": "",
-                    "transcript_text": "",
+                    "user_message_sent_at": "",
+                    "user_audio_transcript": "",
+                    "user_audio_transcript_received_at": "",
                 },
             ]
 
@@ -218,11 +219,11 @@ class ChatScreen(MDScreen):
                     UserMessageCard(
                         user_audio_file=message.get("user_audio_file", ""),
                         user_audio_created_at=message.get("user_audio_created_at", ""),
-                        message_sent_at=message.get("message_sent_at", ""),
-                        transcript_text=message.get("transcript_text", ""),
-                        transcript_received_at=message.get(
+                        user_audio_transcript=message.get("transcript_text", ""),
+                        user_audio_transcript_received_at=message.get(
                             "transcript_received_at", ""
                         ),
+                        user_message_sent_at=message.get("message_sent_at", ""),
                     )
                 )
             elif message["role"] == "assistant":
