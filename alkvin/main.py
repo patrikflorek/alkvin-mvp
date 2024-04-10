@@ -20,6 +20,14 @@ from alkvin.uix.screens.bot_screen import BotScreen
 from alkvin.uix.screens.bot_replica_screen import BotReplicaScreen
 from alkvin.uix.screens.settings_screen import SettingsScreen
 
+from alkvin.db import db
+
+from alkvin.entities.chat import Chat
+from alkvin.entities.user import User
+from alkvin.entities.bot import Bot
+from alkvin.entities.user_message import UserMessage
+from alkvin.entities.bot_message import BotMessage
+
 
 class AppRoot(ScreenManager):
     screen_history = [("home_screen", None)]
@@ -76,3 +84,7 @@ class MainApp(MDApp):
         self.theme_cls.accent_palette = "Orange"
 
         return AppRoot()
+
+    def on_start(self):
+        db.connect()
+        db.create_tables([Chat, User, Bot, UserMessage, BotMessage])

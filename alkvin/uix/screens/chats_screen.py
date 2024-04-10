@@ -13,6 +13,8 @@ from kivy.properties import ListProperty, NumericProperty
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineListItem
 
+from alkvin.entities.chat import Chat
+
 
 Builder.load_string(
     """
@@ -73,7 +75,12 @@ class ChatsScreen(MDScreen):
         super().__init__(*args, **kwargs)
 
     def on_enter(self):
+        chats = Chat.select().dicts()
         self.chat_items = [
-            {"chat_id": i, "text": f"Chat {i}", "secondary_text": f"Chat {i} summary"}
-            for i in range(1, 6)
+            {
+                "chat_id": chat["id"],
+                "text": chat["title"],
+                "secondary_text": chat["summary"],
+            }
+            for chat in chats
         ]

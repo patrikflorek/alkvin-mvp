@@ -9,8 +9,15 @@ The ChatScreen class displays the chat messages between the user and
 the chat bot, as well as options to summarize the chat, select a user, select a bot, and delete the chat.
 """
 
+from datetime import datetime
+
 from kivy.lang import Builder
-from kivy.properties import DictProperty, NumericProperty, StringProperty
+from kivy.properties import (
+    DictProperty,
+    NumericProperty,
+    ObjectProperty,
+    StringProperty,
+)
 
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
@@ -111,8 +118,11 @@ class ChatScreen(MDScreen):
 
     chat_title = StringProperty("A new chat")
     chat_summary = StringProperty("This is a summary of the chat so far.")
+
     chat_user = DictProperty(None)
     chat_bot = DictProperty(None)
+
+    chat_created_at = ObjectProperty(None)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -158,6 +168,12 @@ class ChatScreen(MDScreen):
             self.chat_title = "A new chat"
             self.chat_summary = ""
             self.chat_messages = []
+
+            self.user = None
+            self.bot = None
+
+            self.chat_created_at = datetime.now()
+            self.chat_updated_at = self.chat_created_at
         else:
             # Load chat
             self.chat_title = "Chat 1"
@@ -239,6 +255,12 @@ class ChatScreen(MDScreen):
                         ),
                     )
                 )
+
+        if self.chat_user is None:
+            self.select_user()
+
+        if self.chat_bot is None:
+            self.select_bot()
 
     def scroll_to_bottom(self):
         # If the chat is longer than the screen, scroll to the bottom
