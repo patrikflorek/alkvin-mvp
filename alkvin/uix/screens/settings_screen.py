@@ -12,7 +12,9 @@ from dotenv import get_key, set_key
 from kivy.lang import Builder
 from kivy.properties import StringProperty
 
+from kivymd.uix.label import MDLabel
 from kivymd.uix.screen import MDScreen
+from kivymd.uix.snackbar import MDSnackbar, MDSnackbarActionButton
 
 
 Builder.load_string(
@@ -26,7 +28,7 @@ Builder.load_string(
             specific_text_color: app.theme_cls.opposite_text_color
             left_action_items: 
                 [
-                ["arrow-left", lambda x: app.root.switch_back(), "Back", "Back"]
+                ["arrow-left", lambda x: root.switch_back(), "Back", "Back"]
                 ]
 
         ScrollView:
@@ -61,10 +63,35 @@ class SettingsScreen(MDScreen):
 
     openai_api_key = StringProperty()
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.missing_api_key_snackbar = MDSnackbar()
+        self.missing_api_key_snackbar.add_widget(
+            MDLabel(text="OpenAI API key is required", padding="10dp")
+        )
+        self.missing_api_key_snackbar.add_widget(
+            MDSnackbarActionButton(
+                text="OK",
+                on_release=self.missing_api_key_snackbar.dismiss,
+                pos_hint={"right": 1, "center_y": 0.5},
+            )
+        )
+
     def on_enter(self):
         openai_api_key = get_key(".env", "OPENAI_API_KEY")
-        if openai_api_key is not None:
+
+        if openai_api_key is None:
+            self.missing_api_key_snackbar.open()
+        else:
             self.openai_api_key = openai_api_key
+
+    def switch_back(self):
+        if not self.openai_api_key:
+            self.missing_api_key_snackbar.open()
+            return
+
+        self.manager.switch_back()
 
     def on_pre_leave(self):
         set_key(".env", "OPENAI_API_KEY", self.openai_api_key)

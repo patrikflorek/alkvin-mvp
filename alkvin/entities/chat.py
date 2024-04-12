@@ -13,7 +13,3 @@ class Chat(BaseModel):
     summary = CharField()
     user = ForeignKeyField(User, backref="chats", null=True)
     bot = ForeignKeyField(Bot, backref="chats", null=True)
-
-    created_at = DateTimeField(constraints=[SQL("DEFAULT (datetime('now'))")])
-    updated_at = DateTimeField()
-    deleted_at = DateTimeField(null=True)

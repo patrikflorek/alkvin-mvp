@@ -69,6 +69,13 @@ Builder.load_string(
                     multiline: True
 
                 MDTextField:
+                    id: bot_summarization_instructions_field
+                    text: root.bot_summarization_instructions
+                    on_text: root.bot_summarization_instructions = self.text
+                    hint_text: "Summarization instructions"
+                    multiline: True
+
+                MDTextField:
                     id: bot_tts_prompt_field
                     text: root.bot_tts_prompt
                     on_text: root.bot_tts_prompt = self.text
@@ -92,6 +99,7 @@ class BotScreen(MDScreen):
     bot_name = StringProperty()
     bot_stt_language = StringProperty()
     bot_text_generation_instructions = StringProperty()
+    bot_summarization_instructions = StringProperty()
     bot_tts_prompt = StringProperty()
     bot_tts_voice = StringProperty()
 
@@ -144,6 +152,7 @@ class BotScreen(MDScreen):
             self.bot_name = "New bot"
             self.bot_stt_language = "en"
             self.bot_text_generation_instructions = "You are a useful assistant."
+            self.bot_summarization_instructions = "Summarize the chat so far."
             self.bot_tts_prompt = "Following is response from a chat bot."
             self.bot_tts_voice = "alloy"
         else:
@@ -151,6 +160,7 @@ class BotScreen(MDScreen):
             self.chat_name = "Bot 1"
             self.bot_stt_language = "en"
             self.bot_text_generation_instructions = "You are a helpful assistant that provides detailed explanations and examples about Python programming."
+            self.bot_summarization_instructions = "Summarize the chat so far and provide a brief explanation of the Python code."
             self.bot_tts_prompt = "The following is the response from a chat bot which contains a lot of Python code."
             self.bot_tts_voice = "nova"
 

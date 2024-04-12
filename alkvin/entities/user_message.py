@@ -15,7 +15,3 @@ class UserMessage(BaseModel):
 
     transcript = CharField(null=True)
     transcript_received_at = DateTimeField(null=True)
-
-    sent_at = DateTimeField(null=True)
-    updated_at = DateTimeField()
-    deleted_at = DateTimeField(null=True)

@@ -17,6 +17,3 @@ class BotMessage(BaseModel):
 
     speech_file = CharField(null=True)
     speech_received_at = DateTimeField(null=True)
-
-    updated_at = DateTimeField()
-    deleted_at = DateTimeField(null=True)

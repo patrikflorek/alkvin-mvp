@@ -6,6 +6,8 @@ Alkvin MVP is a kivy/kivymd-based app designed for voice-based communication
 with LLM chat bots.
 """
 
+from dotenv import get_key
+
 from kivymd.app import MDApp
 from kivymd.uix.screenmanager import ScreenManager
 
@@ -29,8 +31,13 @@ from alkvin.entities.user_message import UserMessage
 from alkvin.entities.bot_message import BotMessage
 
 
+from kivy.clock import Clock
+
+
 class AppRoot(ScreenManager):
     screen_history = [("home_screen", None)]
+
+    missing_api_key_snackbar = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -44,6 +51,9 @@ class AppRoot(ScreenManager):
         self.add_widget(BotScreen(name="bot_screen"))
         self.add_widget(BotReplicaScreen(name="bot_replica_screen"))
         self.add_widget(SettingsScreen(name="settings_screen"))
+
+        if get_key(".env", "OPENAI_API_KEY") is None:
+            Clock.schedule_once(lambda dt: self.switch_screen("settings_screen"), 3)
 
     def switch_screen(self, screen_name, screen_data=None, direction="forward"):
         screen_history_item = (screen_name, screen_data)
