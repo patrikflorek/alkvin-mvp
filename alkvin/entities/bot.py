@@ -8,7 +8,7 @@ class Bot(BaseModel):
 
     name = CharField(unique=True)
     language = CharField(null=True)
-    instructions = CharField(null=True)
-    summarization_prompt = CharField(null=True)
-    speech_prompt = CharField(null=True)
+    instructions = CharField(default="")
+    summarization_prompt = CharField(default="")
+    speech_prompt = CharField(default="")
     speech_voice = CharField(null=True)

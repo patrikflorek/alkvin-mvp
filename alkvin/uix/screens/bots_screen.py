@@ -8,10 +8,12 @@ for creating new bots.
 """
 
 from kivy.lang import Builder
-from kivy.properties import ListProperty, NumericProperty
+from kivy.properties import ListProperty, NumericProperty, StringProperty
 
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineListItem
+
+from alkvin.entities.bot import Bot
 
 
 Builder.load_string(
@@ -19,6 +21,9 @@ Builder.load_string(
 #:import FAB alkvin.uix.components.fab.FAB
 
 <BotsScreenBotItem>:
+    text: root.bot_name
+    secondary_text: root.bot_instructions
+
     on_release: app.root.switch_screen("bot_screen", {"bot_id": self.bot_id})
 
 <BotsScreen>:
@@ -60,6 +65,8 @@ class BotsScreenBotItem(TwoLineListItem):
     """Custom list item for displaying a chat bot."""
 
     bot_id = NumericProperty()
+    bot_name = StringProperty()
+    bot_instructions = StringProperty()
 
 
 class BotsScreen(MDScreen):
@@ -67,8 +74,13 @@ class BotsScreen(MDScreen):
 
     bot_items = ListProperty()
 
-    def on_enter(self):
+    def on_pre_enter(self):
+        bots = Bot.select(Bot.id, Bot.name, Bot.instructions)
         self.bot_items = [
-            {"bot_id": i, "text": f"Bot {i}", "secondary_text": f"Bot {i} instructions"}
-            for i in range(1, 6)
+            {
+                "bot_id": bot.id,
+                "bot_name": bot.name,
+                "bot_instructions": bot.instructions,
+            }
+            for bot in bots
         ]

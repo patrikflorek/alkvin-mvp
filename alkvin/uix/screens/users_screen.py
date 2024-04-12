@@ -8,10 +8,12 @@ for creating new users.
 """
 
 from kivy.lang import Builder
-from kivy.properties import ListProperty, NumericProperty
+from kivy.properties import ListProperty, NumericProperty, StringProperty
 
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineListItem
+
+from alkvin.entities.user import User
 
 
 Builder.load_string(
@@ -20,6 +22,9 @@ Builder.load_string(
 
 
 <UsersScreenUserItem>:
+    text: root.user_name
+    secondary_text: root.user_introduction
+
     on_release: app.root.switch_screen("user_screen", {"user_id": self.user_id})
 
     
@@ -74,6 +79,8 @@ class UsersScreenUserItem(TwoLineListItem):
     """Custom list item widget for displaying users."""
 
     user_id = NumericProperty()
+    user_name = StringProperty()
+    user_introduction = StringProperty()
 
 
 class UsersScreen(MDScreen):
@@ -81,12 +88,13 @@ class UsersScreen(MDScreen):
 
     user_items = ListProperty()
 
-    def on_enter(self):
+    def on_pre_enter(self):
+        users = User.select(User.id, User.name, User.introduction)
         self.user_items = [
             {
-                "user_id": i,
-                "text": f"User {i}",
-                "secondary_text": f"User {i} introduction",
+                "user_id": user.id,
+                "user_name": user.name,
+                "secondary_text": user.introduction,
             }
-            for i in range(1, 6)
+            for user in users
         ]

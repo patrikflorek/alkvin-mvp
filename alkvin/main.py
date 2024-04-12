@@ -8,6 +8,8 @@ with LLM chat bots.
 
 from dotenv import get_key
 
+from kivy.clock import Clock
+
 from kivymd.app import MDApp
 from kivymd.uix.screenmanager import ScreenManager
 
@@ -31,9 +33,6 @@ from alkvin.entities.user_message import UserMessage
 from alkvin.entities.bot_message import BotMessage
 
 
-from kivy.clock import Clock
-
-
 class AppRoot(ScreenManager):
     screen_history = [("home_screen", None)]
 
@@ -51,9 +50,6 @@ class AppRoot(ScreenManager):
         self.add_widget(BotScreen(name="bot_screen"))
         self.add_widget(BotReplicaScreen(name="bot_replica_screen"))
         self.add_widget(SettingsScreen(name="settings_screen"))
-
-        if get_key(".env", "OPENAI_API_KEY") is None:
-            Clock.schedule_once(lambda dt: self.switch_screen("settings_screen"), 3)
 
     def switch_screen(self, screen_name, screen_data=None, direction="forward"):
         screen_history_item = (screen_name, screen_data)
@@ -98,3 +94,16 @@ class MainApp(MDApp):
     def on_start(self):
         db.connect()
         db.create_tables([Chat, User, Bot, UserMessage, BotMessage])
+
+        if User.select().count() == 0:
+            dummy_user = User(name="Dummy User")
+            dummy_user.save()
+
+        if Bot.select().count() == 0:
+            dummy_bot = Bot(name="Dummy Bot")
+            dummy_bot.save()
+
+        if get_key(".env", "OPENAI_API_KEY") is None:
+            Clock.schedule_once(
+                lambda dt: self.root.switch_screen("settings_screen"), 2
+            )

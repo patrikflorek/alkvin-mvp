@@ -7,4 +7,4 @@ class User(BaseModel):
     """User model class for chat users."""
 
     name = CharField(unique=True)
-    introduction = CharField(null=True)
+    introduction = CharField(default="")
