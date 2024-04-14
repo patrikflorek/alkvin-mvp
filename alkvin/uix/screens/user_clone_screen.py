@@ -22,6 +22,8 @@ class UserCloneScreen(UserScreen):
     original_user = ObjectProperty(allownone=True)
     original_user_id = NumericProperty(allownone=True)
 
+    user = ObjectProperty(allownone=True)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -31,7 +33,7 @@ class UserCloneScreen(UserScreen):
         del self.ids.user_screen_top_app_bar.right_action_items[0]
 
     def _clone_original_user(self):
-        user_clone_name = User.get_clone_name(self.original_user.name)
+        user_clone_name = self.original_user.get_clone_name()
         self.user = User.create(
             name=user_clone_name,
             introduction=self.original_user.introduction,
@@ -46,7 +48,7 @@ class UserCloneScreen(UserScreen):
 
         self._clone_original_user()
 
-        self.taken_user_names = User.get_taken_names(exceptions=[self.user_name])
+        self.taken_user_names = self.user.get_taken_names()
 
     def clone_user(self):
         pass  # Remove clone functionality

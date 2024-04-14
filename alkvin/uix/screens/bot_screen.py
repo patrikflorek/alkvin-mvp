@@ -218,7 +218,7 @@ class BotScreen(MDScreen):
         else:
             self._load_bot()
 
-        self.taken_bot_names = Bot.get_taken_names(exceptions=[self.bot_name])
+        self.taken_bot_names = self.bot.get_taken_names()
 
     def _can_safely_leave(self):
         try:

@@ -13,7 +13,7 @@ from datetime import datetime
 
 from kivy.lang import Builder
 from kivy.properties import (
-    DictProperty,
+    ListProperty,
     NumericProperty,
     ObjectProperty,
     StringProperty,
@@ -27,6 +27,10 @@ from alkvin.uix.components.select_user_dialog import SelectUserDialog
 from alkvin.uix.components.user_message_card import UserMessageCard
 from alkvin.uix.components.select_bot_dialog import SelectBotDialog
 from alkvin.uix.components.assistant_message_card import AssistantMessageCard
+
+from alkvin.entities.bot import Bot
+from alkvin.entities.chat import Chat
+from alkvin.entities.user import User
 
 
 Builder.load_string(
@@ -114,20 +118,21 @@ Builder.load_string(
 class ChatScreen(MDScreen):
     """Screen for interacting with a chat bot using voice messages."""
 
+    chat = ObjectProperty(allownone=True)
     chat_id = NumericProperty(allownone=True)
 
     chat_title = StringProperty("A new chat")
     chat_summary = StringProperty("This is a summary of the chat so far.")
 
-    chat_user = DictProperty(None)
-    chat_bot = DictProperty(None)
-
-    chat_created_at = ObjectProperty(None)
+    chat_messages = ListProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
         self.select_user_dialog = SelectUserDialog(self._on_select_user_callback)
+
         self.select_bot_dialog = SelectBotDialog(self._on_select_bot_callback)
+
         self.delete_chat_dialog = MDDialog(
             title="Delete chat",
             text="Are you sure you want to delete this chat?",
@@ -145,121 +150,80 @@ class ChatScreen(MDScreen):
         )
 
     def _on_select_user_callback(self, user_id):
-        # TODO: Retrieve user data
-
-        self.chat_user = {
-            "user_id": user_id,
-            "user_name": "John Doe",
-            "user_introduction": "Hello, I am John Doe.",
-        }
+        self.chat.user = User.get(User.id == user_id)
 
     def _on_select_bot_callback(self, bot_id):
-        # TODO: Retrieve bot data
+        self.chat.bot = Bot.get(Bot.id == bot_id)
 
-        self.chat_bot = {
-            "bot_id": bot_id,
-            "bot_name": "Bot 1",
-            "bot_introduction": "Hello, I am Bot 1.",
-        }
+    def _create_chat(self):
+        self.chat = Chat.create(title="NEW CHAT")
 
-    def on_enter(self):
+        self.chat_id = self.chat.id
+        self.chat_title = self.chat.title
+        self.chat_summary = self.chat.summary
+
+    def _load_chat(self):
+        self.chat = Chat.get(Chat.id == self.chat_id)
+
+        self.chat_title = self.chat.title
+        self.chat_summary = self.chat.summary
+
+    def _message_items_sort_key(self, message):
+        is_unsent_user_message = (
+            message["role"] == "user" and message["data"].sent_at is None
+        )
+        displayed_in_chat_at = (
+            message["role"] == "user" and message["data"].sent_at
+        ) or (message["role"] == "assistant" and message["data"].completion_received_at)
+        return (is_unsent_user_message, displayed_in_chat_at)
+
+    def on_pre_enter(self):
         if self.chat_id is None:
-            # Create new chat
-            self.chat_title = "A new chat"
-            self.chat_summary = ""
-            self.chat_messages = []
-
-            self.user = None
-            self.bot = None
-
-            self.chat_created_at = datetime.now()
-            self.chat_updated_at = self.chat_created_at
+            self._create_chat()
         else:
-            # Load chat
-            self.chat_title = "Chat 1"
-            self.chat_summary = "This is a summary of Chat 1."
+            self._load_chat()
 
-            self.chat_messages = [
-                {
-                    "role": "user",
-                    "user_audio_file": "adstfswrrf.wav",
-                    "user_audio_created_at": "2020-07-01T12:01:00",
-                    "user_message_sent_at": "2020-07-01T12:01:02",
-                    "user_audio_transcript": "Hello, I'm a human. I'm here to help you with any questions you may have about the product. How can I help you today?",
-                    "user_transcript_received_at": "2020-07-01T12:02:00",
-                },
-                {
-                    "role": "assistant",
-                    "completion_text": "Hello, I'm a bot. I'm here to help you with any questions you may have about the product. How can I help you today?",
-                    "completion_received_at": "2020-07-01T12:05:00",
-                    "speech_audio_file": "weqdstrwer.wav",
-                    "speech_audio_received_at": "2020-07-01T12:08:00",
-                },
-                {
-                    "role": "user",
-                    "user_audio_file": "kdqwservfy.wav",
-                    "user_audio_created_at": "2020-07-01T12:08:30",
-                    "user_message_sent_at": "2020-07-01T12:08:32",
-                    "user_audio_transcript": "I have a question about the product. Can you tell me more about the features?",
-                    "user_transcript_received_at": "2020-07-01T12:09:00",
-                },
-                {
-                    "role": "assistant",
-                    "completion_text": "Sure! The product has a lot of features. It has a built-in camera, a microphone, and a speaker. It also has a touch screen display and a battery that can last for up to 12 hours. It's a great product for people who are always on the go.",
-                    "completion_received_at": "2020-07-01T12:10:00",
-                    "speech_audio_file": "",
-                    "speech_audio_received_at": "",
-                },
-                {
-                    "role": "user",
-                    "user_audio_file": "deasdfdpacvx.wav",
-                    "user_audio_created_at": "2020-07-01T12:12:30",
-                    "user_message_sent_at": "",
-                    "user_audio_transcript": "Thank you for the information. I'm interested in purchasing the product. Can you tell me how I can place an order?",
-                    "user_audio_transcript_received_at": "2020-07-01T12:12:32",
-                },
-                {
-                    "role": "user",
-                    "user_audio_file": "rgsonnksqeib.wav",
-                    "user_audio_created_at": "2020-07-01T12:12:34",
-                    "user_message_sent_at": "",
-                    "user_audio_transcript": "",
-                    "user_audio_transcript_received_at": "",
-                },
-            ]
+        user_message_items = [
+            {"role": "user", "message": message} for message in self.chat.user_messages
+        ]
+        assistant_message_items = [
+            {"role": "assistant", "message": message}
+            for message in self.chat.assistant_messages
+        ]
+
+        sorted_message_items = sorted(
+            user_message_items + assistant_message_items,
+            key=self._message_items_sort_key,
+        )
 
         self.ids.chat_screen_messages_container.clear_widgets()
-        for message in self.chat_messages:
-            if message["role"] == "user":
+        for message_item in sorted_message_items:
+            sender_role = message_item["role"]
+            message = message_item["message"]
+            if sender_role == "user":
                 self.ids.chat_screen_messages_container.add_widget(
                     UserMessageCard(
-                        user_audio_file=message.get("user_audio_file", ""),
-                        user_audio_created_at=message.get("user_audio_created_at", ""),
-                        user_audio_transcript=message.get("transcript_text", ""),
-                        user_audio_transcript_received_at=message.get(
-                            "transcript_received_at", ""
-                        ),
-                        user_message_sent_at=message.get("message_sent_at", ""),
+                        user_audio_file=message.audio_file,
+                        user_audio_created_at=message.audio_created_at,
+                        user_audio_transcript=message.transcript,
+                        user_audio_transcript_received_at=message.transcript_received_at,
+                        user_message_sent_at=message.sent_at,
                     )
                 )
-            elif message["role"] == "assistant":
+            elif sender_role == "assistant":
                 self.ids.chat_screen_messages_container.add_widget(
                     AssistantMessageCard(
-                        completion_text=message.get("completion_text", ""),
-                        completion_received_at=message.get(
-                            "completion_received_at", ""
-                        ),
-                        speech_audio_file=message.get("speech_audio_file", ""),
-                        speech_audio_received_at=message.get(
-                            "speech_audio_received_at", ""
-                        ),
+                        assistant_completion=message.completion,
+                        assistant_completion_received_at=message.completion_received_at,
+                        assistant_speech_file=message.speech_file,
+                        assistant_speech_audio_received_at=message.speech_received_at,
                     )
                 )
 
-        if self.chat_user is None:
+        if self.chat.user is None:
             self.select_user()
 
-        if self.chat_bot is None:
+        if self.chat.bot is None:
             self.select_bot()
 
     def scroll_to_bottom(self):
@@ -288,18 +252,8 @@ class ChatScreen(MDScreen):
     def select_user(self):
         self.select_user_dialog.update_items(
             [
-                {
-                    "user_id": 1,
-                    "user_name": "John Doe",
-                },
-                {
-                    "user_id": 2,
-                    "user_name": "Jane Doe",
-                },
-                {
-                    "user_id": 3,
-                    "user_name": "Alice Doe",
-                },
+                {"user_id": user.id, "user_name": user.name}
+                for user in User.select(User.id, User.name)
             ]
         )
 
@@ -308,25 +262,15 @@ class ChatScreen(MDScreen):
     def select_bot(self):
         self.select_bot_dialog.update_items(
             [
-                {
-                    "bot_id": 1,
-                    "bot_name": "Bot 1",
-                },
-                {
-                    "bot_id": 2,
-                    "bot_name": "Bot 2",
-                },
-                {
-                    "bot_id": 3,
-                    "bot_name": "Bot 3",
-                },
+                {"bot_id": bot.id, "bot_name": bot.name}
+                for bot in Bot.select(Bot.id, Bot.name)
             ]
         )
 
         self.select_bot_dialog.open()
 
     def delete_chat(self):
-        print("Deleting chat")  # TODO: Implement chat deletion
+        self.chat.delete_instance()
 
         self.delete_chat_dialog.dismiss()
         self.manager.switch_back()

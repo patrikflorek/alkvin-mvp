@@ -1,4 +1,4 @@
-from peewee import CharField, DateTimeField, SQL
+from peewee import CharField
 
 from alkvin.db import BaseModel
 
@@ -20,10 +20,10 @@ class Bot(BaseModel):
         """Get a new bot name."""
         return f"NEW BOT [{Bot.select().count() + 1}]"
 
-    def get_replica_name(prototype_bot_name):
+    def get_replica_name(self):
         """Get a replica bot name."""
-        return f"{prototype_bot_name} REPLICA [{Bot.select().count() + 1}]"
+        return f"{self.name} REPLICA [{Bot.select().count() + 1}]"
 
-    def get_taken_names(exceptions=[]):
+    def get_taken_names(self):
         """Get taken bot names."""
-        return [bot.name for bot in Bot.select().where(Bot.name.not_in(exceptions))]
+        return [bot.name for bot in Bot.select().where(Bot.name != self.name)]

@@ -1,4 +1,4 @@
-from peewee import CharField, DateTimeField, SQL
+from peewee import CharField
 
 from alkvin.db import BaseModel
 
@@ -13,10 +13,10 @@ class User(BaseModel):
         """Get a new user name."""
         return f"NEW USER [{User.select().count() + 1}]"
 
-    def get_clone_name(original_user_name):
+    def get_clone_name(self):
         """Get a clone user name."""
-        return f"CLONE OF {original_user_name} [{User.select().count() + 1}]"
+        return f"{self.name} CLONE [{User.select().count() + 1}]"
 
-    def get_taken_names(exceptions=[]):
+    def taken_names(self):
         """Get taken user names."""
-        return [user.name for user in User.select().where(User.name.not_in(exceptions))]
+        return [user.name for user in User.select().where(User.name != self.name)]

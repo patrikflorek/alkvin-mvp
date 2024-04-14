@@ -22,6 +22,8 @@ class BotReplicaScreen(BotScreen):
     prototype_bot = ObjectProperty(allownone=True)
     prototype_bot_id = NumericProperty(allownone=True)
 
+    bot = ObjectProperty(allownone=True)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -31,7 +33,7 @@ class BotReplicaScreen(BotScreen):
         del self.ids.bot_screen_top_app_bar.right_action_items[0]
 
     def _replicate_prototype_bot(self):
-        bot_replica_name = Bot.get_replica_name(self.prototype_bot.name)
+        bot_replica_name = self.prototype_bot.get_replica_name()
         self.bot = Bot.create(
             name=bot_replica_name,
             language=self.prototype_bot.language,
@@ -53,7 +55,7 @@ class BotReplicaScreen(BotScreen):
 
         self._replicate_prototype_bot()
 
-        self.taken_bot_names = Bot.get_taken_names(exceptions=[self.bot_name])
+        self.taken_bot_names = self.bot.get_taken_names()
 
     def replicate_bot(self):
         pass  # Remove replicate functionality

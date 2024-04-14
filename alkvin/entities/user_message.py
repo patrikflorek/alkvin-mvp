@@ -1,4 +1,6 @@
-from peewee import CharField, DateTimeField, ForeignKeyField, SQL
+from datetime import datetime
+
+from peewee import CharField, DateTimeField, ForeignKeyField
 
 from alkvin.db import BaseModel
 
@@ -11,7 +13,9 @@ class UserMessage(BaseModel):
     chat = ForeignKeyField(Chat, backref="user_messages")
 
     audio_file = CharField()
-    audio_created_at = DateTimeField(constraints=[SQL("DEFAULT (datetime('now'))")])
+    audio_created_at = DateTimeField(default=datetime.now)
 
-    transcript = CharField(null=True)
+    transcript = CharField(default="")
     transcript_received_at = DateTimeField(null=True)
+
+    sent_at = DateTimeField(null=True)

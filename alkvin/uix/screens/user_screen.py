@@ -82,6 +82,7 @@ class UserScreen(MDScreen):
         super().__init__(**kwargs)
 
         self.invalid_data_error_snackbar = InvalidDataErrorSnackbar()
+
         self.delete_user_dialog = MDDialog(
             title="Delete user",
             text="Are you sure you want to delete this user?",
@@ -98,8 +99,8 @@ class UserScreen(MDScreen):
             ],
         )
 
-    def _create_user(self, new_user_name, new_user_introduction):
-        self.user = User.create(name=new_user_name, introduction=new_user_introduction)
+    def _create_user(self):
+        self.user = User.create(name=User.get_new_name())
 
         self.user_id = self.user.id
         self.user_name = self.user.name
@@ -129,14 +130,11 @@ class UserScreen(MDScreen):
         )
 
         if self.user_id is None:
-            self._create_user(
-                new_user_name=User.get_new_name(),
-                new_user_introduction="Hi, I am a new user!",
-            )
+            self._create_user()
         else:
             self._load_user()
 
-        self.taken_user_names = User.get_taken_names(exceptions=[self.user_name])
+        self.taken_user_names = self.user.get_taken_names()
 
     def _can_safely_leave(self):
         try:
