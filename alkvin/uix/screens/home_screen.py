@@ -8,15 +8,9 @@ The HomeScreen class represents the main screen of the application, which displa
 sections of the app, such as chats, users, bots, and settings.
 """
 
-from dotenv import get_key
-
-from kivy.clock import Clock
 from kivy.lang import Builder
 
-from kivymd.app import MDApp
-from kivymd.uix.label import MDLabel
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.snackbar import MDSnackbar, MDSnackbarActionButton
 
 
 Builder.load_string(

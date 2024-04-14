@@ -11,12 +11,16 @@ text generation instructions, and text-to-speech settings for a chat bot.
 """
 
 from kivy.lang import Builder
-from kivy.properties import NumericProperty, StringProperty
+from kivy.properties import NumericProperty, ObjectProperty, StringProperty
 
-from kivymd.uix.screen import MDScreen
-from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton
+from kivymd.uix.menu import MDDropdownMenu
+from kivymd.uix.screen import MDScreen
+
+from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
+
+from alkvin.entities.bot import Bot
 
 
 Builder.load_string(
@@ -32,7 +36,7 @@ Builder.load_string(
             use_overflow: True
             left_action_items: 
                 [
-                ["arrow-left", lambda x: app.root.switch_back(), "Back", "Back"]
+                ["arrow-left", lambda x: root.switch_back(), "Back", "Back"]
                 ]
             right_action_items: 
                 [
@@ -56,37 +60,37 @@ Builder.load_string(
                     hint_text: "Name"
 
                 MDTextField:
-                    id: bot_stt_language_field
-                    text: root.bot_stt_language
-                    on_text: root.bot_stt_language = self.text
-                    hint_text: "Speech-to-text language"
+                    id: bot_language_field
+                    text: root.bot_language
+                    on_text: root.bot_language = self.text
+                    hint_text: "Language"
 
                 MDTextField:
-                    id: bot_instructions_field
-                    text: root.bot_text_generation_instructions
-                    on_text: root.bot_text_generation_instructions = self.text
+                    id: bot_generation_prompt_field
+                    text: root.bot_generation_prompt
+                    on_text: root.bot_generation_prompt = self.text
                     hint_text: "Text generation instructions"
                     multiline: True
 
                 MDTextField:
-                    id: bot_summarization_instructions_field
-                    text: root.bot_summarization_instructions
-                    on_text: root.bot_summarization_instructions = self.text
+                    id: bot_summarization_prompt_field
+                    text: root.bot_summarization_prompt
+                    on_text: root.bot_summarization_prompt = self.text
                     hint_text: "Summarization instructions"
                     multiline: True
 
                 MDTextField:
-                    id: bot_tts_prompt_field
-                    text: root.bot_tts_prompt
-                    on_text: root.bot_tts_prompt = self.text
-                    hint_text: "Text-to-speech prompt"
+                    id: bot_speech_prompt_field
+                    text: root.bot_speech_prompt
+                    on_text: root.bot_speech_prompt = self.text
+                    hint_text: "Text-to-speech instructions"
                     multiline: True
 
                 MDTextField:
-                    id: bot_tts_voice_field
-                    text: root.bot_tts_voice
+                    id: bot_speech_voice_field
+                    text: root.bot_speech_voice
                     hint_text: "Text-to-speech voice"
-                    on_focus: if self.focus: root.tts_voice_menu.open()
+                    on_focus: if self.focus: root.speech_voice_menu.open()
 """
 )
 
@@ -94,31 +98,32 @@ Builder.load_string(
 class BotScreen(MDScreen):
     """Screen for creating, editing, replicating, and deleting chat bots."""
 
+    bot = ObjectProperty(allownone=True)
     bot_id = NumericProperty(allownone=True)
 
     bot_name = StringProperty()
-    bot_stt_language = StringProperty()
-    bot_text_generation_instructions = StringProperty()
-    bot_summarization_instructions = StringProperty()
-    bot_tts_prompt = StringProperty()
-    bot_tts_voice = StringProperty()
+    bot_language = StringProperty()
+    bot_generation_prompt = StringProperty()
+    bot_summarization_prompt = StringProperty()
+    bot_speech_prompt = StringProperty()
+    bot_speech_voice = StringProperty()
 
     delete_bot_dialog = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        tts_voices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+        speech_voices = Bot.get_speech_voices()
 
-        self.tts_voice_menu = MDDropdownMenu(
-            caller=self.ids.bot_tts_voice_field,
+        self.speech_voice_menu = MDDropdownMenu(
+            caller=self.ids.bot_speech_voice_field,
             position="center",
             items=[
                 {
                     "viewclass": "OneLineListItem",
                     "text": voice.capitalize(),
-                    "on_release": lambda x=voice: self.set_tts_voice(x),
+                    "on_release": lambda x=voice: self.set_speech_voice(x),
                 }
-                for voice in tts_voices
+                for voice in speech_voices
             ],
         )
 
@@ -138,41 +143,111 @@ class BotScreen(MDScreen):
             ],
         )
 
-    def set_tts_voice(self, voice):
-        self.ids.bot_tts_voice_field.text = voice
-        self.tts_voice_menu.dismiss()
+    def set_speech_voice(self, voice):
+        self.ids.bot_speech_voice_field.text = voice
+        self.speech_voice_menu.dismiss()
 
-    def on_enter(self):
+    def _create_bot(
+        self,
+        new_bot_name,
+        new_bot_language="",
+        new_bot_generation_prompt="",
+        new_bot_summarization_prompt="",
+        new_bot_speech_prompt="",
+        new_bot_speech_voice="alloy",
+    ):
+        self.bot = Bot.create(
+            name=new_bot_name,
+            language=new_bot_language,
+            generation_prompt=new_bot_generation_prompt,
+            summarization_prompt=new_bot_summarization_prompt,
+            speech_prompt=new_bot_speech_prompt,
+            speech_voice=new_bot_speech_voice,
+        )
+
+        self.bot_id = self.bot.id
+        self.bot_name = self.bot.name
+        self.bot_language = self.bot.language
+        self.bot_generation_prompt = self.bot.generation_prompt
+        self.bot_summarization_prompt = self.bot.summarization_prompt
+        self.bot_speech_prompt = self.bot.speech_prompt
+        self.bot_speech_voice = self.bot.speech_voice
+
+    def _load_bot(self):
+        self.bot = Bot.get(Bot.id == self.bot_id)
+
+        print("_load_bot", self.bot.language, type(self.bot.language))
+
+        self.bot_name = self.bot.name
+        self.bot_language = self.bot.language
+        self.bot_generation_prompt = self.bot.generation_prompt
+        self.bot_summarization_prompt = self.bot.summarization_prompt
+        self.bot_speech_prompt = self.bot.speech_prompt
+        self.bot_speech_voice = self.bot.speech_voice
+
+    def _save_bot(self):
+        if self.bot_name == "":
+            raise ValueError("Bot name cannot be empty")
+
+        if self.bot_name in self.taken_bot_names:
+            raise ValueError(f"Bot name '{self.bot_name}' is already taken")
+
+        self.bot.name = self.bot_name
+        self.bot.language = self.bot_language
+        self.bot.generation_prompt = self.bot_generation_prompt
+        self.bot.summarization_prompt = self.bot_summarization_prompt
+        self.bot.speech_prompt = self.bot_speech_prompt
+        self.bot.speech_voice = self.bot_speech_voice
+
+        self.bot.save()
+
+    def on_pre_enter(self):
         self.ids.bot_screen_top_app_bar.title = (
             "Bot" if self.bot_id is not None else "New bot"
         )
 
         if self.bot_id is None:
-            # Create new bot
-            self.bot_name = "New bot"
-            self.bot_stt_language = "en"
-            self.bot_text_generation_instructions = "You are a useful assistant."
-            self.bot_summarization_instructions = "Summarize the chat so far."
-            self.bot_tts_prompt = "Following is response from a chat bot."
-            self.bot_tts_voice = "alloy"
+            self._create_bot(
+                new_bot_name=Bot.get_new_name(),
+                new_bot_language="en",
+                new_bot_generation_prompt="You are a useful assistant.",
+                new_bot_summarization_prompt="Summarize the chat so far.",
+                new_bot_speech_prompt="Following is response from a chat bot.",
+                new_bot_speech_voice="alloy",
+            )
         else:
-            # Load bot
-            self.chat_name = "Bot 1"
-            self.bot_stt_language = "en"
-            self.bot_text_generation_instructions = "You are a helpful assistant that provides detailed explanations and examples about Python programming."
-            self.bot_summarization_instructions = "Summarize the chat so far and provide a brief explanation of the Python code."
-            self.bot_tts_prompt = "The following is the response from a chat bot which contains a lot of Python code."
-            self.bot_tts_voice = "nova"
+            self._load_bot()
+
+        self.taken_bot_names = Bot.get_taken_names(exceptions=[self.bot_name])
+
+    def _can_safely_leave(self):
+        try:
+            self._save_bot()
+        except ValueError as e:
+            self.invalid_data_error_snackbar.text = str(e)
+            self.invalid_data_error_snackbar.open()
+
+            return False
+
+        return True
+
+    def switch_back(self):
+        if not self._can_safely_leave():
+            return
+
+        self.bot = None
+        self.manager.switch_back()
 
     def replicate_bot(self):
-        print("Replicating bot")  # TODO: Implement bot replication
+        if not self._can_safely_leave():
+            return
 
         self.manager.switch_screen(
             "bot_replica_screen", {"prototype_bot_id": self.bot_id}
         )
 
     def delete_bot(self):
-        print("Deleting bot")  # TODO: Implement bot deletion
+        self.bot.delete_instance()
 
         self.delete_bot_dialog.dismiss()
         self.manager.switch_back()

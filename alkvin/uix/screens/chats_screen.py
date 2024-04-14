@@ -79,7 +79,7 @@ class ChatsScreen(MDScreen):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def on_enter(self):
+    def on_pre_enter(self):
         chats = Chat.select(Chat.id, Chat.title, Chat.summary)
         self.chat_items = [
             {

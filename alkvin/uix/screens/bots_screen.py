@@ -75,12 +75,15 @@ class BotsScreen(MDScreen):
     bot_items = ListProperty()
 
     def on_pre_enter(self):
-        bots = Bot.select(Bot.id, Bot.name, Bot.instructions)
+        if Bot.select().count() == 0:
+            Bot.create(name="Dummy Bot")
+
+        bots = Bot.select(Bot.id, Bot.name, Bot.generation_prompt)
         self.bot_items = [
             {
                 "bot_id": bot.id,
                 "bot_name": bot.name,
-                "bot_instructions": bot.instructions,
+                "bot_instructions": bot.generation_prompt,
             }
             for bot in bots
         ]

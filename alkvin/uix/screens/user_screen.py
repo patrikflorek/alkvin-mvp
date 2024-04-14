@@ -11,11 +11,15 @@ for a virtual user.
 """
 
 from kivy.lang import Builder
-from kivy.properties import NumericProperty, StringProperty
+from kivy.properties import NumericProperty, ObjectProperty, StringProperty
 
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.screen import MDScreen
+
+from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
+
+from alkvin.entities.user import User
 
 
 Builder.load_string(
@@ -32,12 +36,12 @@ Builder.load_string(
             use_overflow: True
             left_action_items: 
                 [
-                ["arrow-left", lambda x: app.root.switch_back(), "Back", "Back"]
+                ["arrow-left", lambda x: root.switch_back(), "Back", "Back"]
                 ]
             right_action_items:
                 [
                 ["content-copy", lambda x: root.clone_user(), "Clone", "Clone"],
-                ["delete", lambda x: root.open_delete_user_dialog(), "Delete", "Delete"]
+                ["delete", lambda x: root.delete_user_dialog.open(), "Delete", "Delete"]
                 ]
 
         ScrollView:
@@ -68,56 +72,100 @@ Builder.load_string(
 class UserScreen(MDScreen):
     """Screen for creating, editing, replicating, and deleting virtual users."""
 
+    user = ObjectProperty(allownone=True)
     user_id = NumericProperty(allownone=True)
 
     user_name = StringProperty()
     user_introduction = StringProperty()
 
-    delete_user_dialog = None
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def on_enter(self):
+        self.invalid_data_error_snackbar = InvalidDataErrorSnackbar()
+        self.delete_user_dialog = MDDialog(
+            title="Delete user",
+            text="Are you sure you want to delete this user?",
+            buttons=[
+                MDFlatButton(
+                    text="CANCEL",
+                    on_release=lambda x: self.delete_user_dialog.dismiss(),
+                ),
+                MDFlatButton(
+                    text="DELETE",
+                    theme_text_color="Error",
+                    on_release=lambda x: self.delete_user(),
+                ),
+            ],
+        )
+
+    def _create_user(self, new_user_name, new_user_introduction):
+        self.user = User.create(name=new_user_name, introduction=new_user_introduction)
+
+        self.user_id = self.user.id
+        self.user_name = self.user.name
+        self.user_introduction = self.user.introduction
+
+    def _load_user(self):
+        self.user = User.get(User.id == self.user_id)
+
+        self.user_name = self.user.name
+        self.user_introduction = self.user.introduction
+
+    def _save_user(self):
+        if self.user_name == "":
+            raise ValueError("User name cannot be empty")
+
+        if self.user_name in self.taken_user_names:
+            raise ValueError(f"User name '{self.user_name}' is already taken")
+
+        self.user.name = self.user_name
+        self.user.introduction = self.user_introduction
+
+        self.user.save()
+
+    def on_pre_enter(self):
         self.ids.user_screen_top_app_bar.title = (
             "User" if self.user_id is not None else "New user"
         )
 
         if self.user_id is None:
-            # Create new user
-            self.user_name = "New user"
-            self.user_introduction = "Hi, I am a new user."
+            self._create_user(
+                new_user_name=User.get_new_name(),
+                new_user_introduction="Hi, I am a new user!",
+            )
         else:
-            # Load user
-            self.user_name = "John Doe"
-            self.user_introduction = "Hello, I am John Doe."
+            self._load_user()
+
+        self.taken_user_names = User.get_taken_names(exceptions=[self.user_name])
+
+    def _can_safely_leave(self):
+        try:
+            self._save_user()
+        except ValueError as e:
+            self.invalid_data_error_snackbar.text = str(e)
+            self.invalid_data_error_snackbar.open()
+
+            return False
+
+        return True
+
+    def switch_back(self):
+        if not self._can_safely_leave():
+            return
+
+        self.user = None
+        self.manager.switch_back()
 
     def clone_user(self):
-        print("Cloning user")  # TODO: Implement cloning user
+        if not self._can_safely_leave():
+            return
 
         self.manager.switch_screen(
-            "user_clone_screen", {"original_user_id": self.user_id}
+            "user_clone_screen", {"original_user_id": self.user.id}
         )
 
-    def open_delete_user_dialog(self):
-        if self.delete_user_dialog is None:
-            self.delete_user_dialog = MDDialog(
-                title="Delete user",
-                text="Are you sure you want to delete this user?",
-                buttons=[
-                    MDFlatButton(
-                        text="CANCEL",
-                        on_release=lambda x: self.delete_user_dialog.dismiss(),
-                    ),
-                    MDFlatButton(
-                        text="DELETE",
-                        theme_text_color="Error",
-                        on_release=lambda x: self.delete_user(),
-                    ),
-                ],
-            )
-
-        self.delete_user_dialog.open()
-
     def delete_user(self):
-        print("Deleting user")  # TODO: Implement deleting user
+        self.user.delete_instance()
 
         self.delete_user_dialog.dismiss()
         self.manager.switch_back()

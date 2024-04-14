@@ -89,6 +89,9 @@ class UsersScreen(MDScreen):
     user_items = ListProperty()
 
     def on_pre_enter(self):
+        if User.select().count() == 0:
+            User.create(name="Dummy User")
+
         users = User.select(User.id, User.name, User.introduction)
         self.user_items = [
             {

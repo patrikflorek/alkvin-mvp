@@ -14,7 +14,8 @@ from kivy.properties import StringProperty
 
 from kivymd.uix.label import MDLabel
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.snackbar import MDSnackbar, MDSnackbarActionButton
+
+from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
 
 
 Builder.load_string(
@@ -66,19 +67,21 @@ class SettingsScreen(MDScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.missing_api_key_snackbar = MDSnackbar()
-        self.missing_api_key_snackbar.add_widget(
-            MDLabel(text="OpenAI API key is required", padding="10dp")
-        )
-        self.missing_api_key_snackbar.add_widget(
-            MDSnackbarActionButton(
-                text="OK",
-                on_release=self.missing_api_key_snackbar.dismiss,
-                pos_hint={"right": 1, "center_y": 0.5},
-            )
-        )
+        self.missing_api_key_snackbar = InvalidDataErrorSnackbar()
+        self.missing_api_key_snackbar.text = "OpenAI API key is required"
 
-    def on_enter(self):
+        # self.missing_api_key_snackbar.add_widget(
+        #     MDLabel(text="OpenAI API key is required", padding="10dp")
+        # )
+        # self.missing_api_key_snackbar.add_widget(
+        #     MDSnackbarActionButton(
+        #         text="OK",
+        #         on_release=self.missing_api_key_snackbar.dismiss,
+        #         pos_hint={"right": 1, "center_y": 0.5},
+        #     )
+        # )
+
+    def on_pre_enter(self):
         openai_api_key = get_key(".env", "OPENAI_API_KEY")
 
         if openai_api_key is None:

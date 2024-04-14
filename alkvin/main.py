@@ -71,6 +71,7 @@ class AppRoot(ScreenManager):
             if id_attribute is not None and hasattr(screen, id_attribute):
                 setattr(screen, id_attribute, None)
 
+        print("Screen name from ScreenManager:", screen_name, screen_data)
         self.current = screen_name
 
     def switch_back(self):
@@ -94,14 +95,6 @@ class MainApp(MDApp):
     def on_start(self):
         db.connect()
         db.create_tables([Chat, User, Bot, UserMessage, BotMessage])
-
-        if User.select().count() == 0:
-            dummy_user = User(name="Dummy User")
-            dummy_user.save()
-
-        if Bot.select().count() == 0:
-            dummy_bot = Bot(name="Dummy Bot")
-            dummy_bot.save()
 
         if get_key(".env", "OPENAI_API_KEY") is None:
             Clock.schedule_once(
