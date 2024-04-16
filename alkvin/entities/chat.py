@@ -16,11 +16,13 @@ class Chat(BaseModel):
     """Chat model class for chat conversations."""
 
     title = CharField()
-    summary = CharField()
+    summary = CharField(default="")
+
     user = ForeignKeyField(User, backref="chats", null=True)
     bot = ForeignKeyField(Bot, backref="chats", null=True)
 
-    def create(*args, **kwargs):
+    @classmethod
+    def create(cls, *args, **kwargs):
         chat = super().create(*args, **kwargs)
         chat_audio_dir = os.path.join(CHATS_AUDIO_DIR, str(chat.id))
         os.makedirs(chat_audio_dir)

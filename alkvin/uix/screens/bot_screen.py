@@ -143,6 +143,8 @@ class BotScreen(MDScreen):
             ],
         )
 
+        self.invalid_data_error_snackbar = InvalidDataErrorSnackbar()
+
     def set_speech_voice(self, voice):
         self.ids.bot_speech_voice_field.text = voice
         self.speech_voice_menu.dismiss()

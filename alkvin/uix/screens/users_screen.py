@@ -92,7 +92,7 @@ class UsersScreen(MDScreen):
         if User.select().count() == 0:
             User.create(name="Dummy User")
 
-        users = User.select(User.id, User.name, User.introduction)
+        users = User.select(User.id, User.name, User.introduction).order_by(User.name)
         self.user_items = [
             {
                 "user_id": user.id,

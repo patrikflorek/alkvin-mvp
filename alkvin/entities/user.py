@@ -17,6 +17,6 @@ class User(BaseModel):
         """Get a clone user name."""
         return f"{self.name} CLONE [{User.select().count() + 1}]"
 
-    def taken_names(self):
+    def get_taken_names(self):
         """Get taken user names."""
         return [user.name for user in User.select().where(User.name != self.name)]

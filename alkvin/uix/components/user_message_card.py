@@ -6,13 +6,7 @@ This module contains the UserMessageCard class, which is a custom card widget
 used for displaying in-chat messages from a user.
 
 Example usage:
-    card = UserMessageCard(
-        user_audio_file="user_voice_audio.wav",
-        user_audio_created_at="2022-01-02 09:00:00",
-        user_audio_transcript="Hello, I need your help.",
-        user_audio_transcript_received_at="2022-01-02 09:02:00"
-        user_message_sent_at="2022-01-02 09:01:00",
-    )
+    card = UserMessageCard(message: UserMessage)
 """
 
 from kivy.lang import Builder
@@ -99,25 +93,14 @@ Builder.load_string(
 class UserMessageCard(MDCard):
     """Custom card widget for displaying messages from a user."""
 
-    user_audio_file = StringProperty()
     user_audio_path = StringProperty()
-    user_audio_created_at = StringProperty()
     user_audio_transcript = StringProperty()
     user_audio_transcript_received_at = StringProperty()
     user_message_sent_at = StringProperty()
 
-    def __init__(
-        self,
-        user_audio_file,
-        user_audio_created_at,
-        user_audio_transcript,
-        user_audio_transcript_received_at,
-        user_message_sent_at,
-        **kwargs
-    ):
+    def __init__(self, message, **kwargs):
         super().__init__(**kwargs)
-        self.user_audio_file = user_audio_file
-        self.user_audio_created_at = user_audio_created_at
-        self.user_audio_transcript = user_audio_transcript
-        self.user_audio_transcript_received_at = user_audio_transcript_received_at
-        self.user_message_sent_at = user_message_sent_at
+        self.user_audio_path = message.get_audio_path()
+        self.user_audio_transcript = message.audio_transcript
+        self.user_audio_transcript_received_at = message.transcript_received_at
+        self.user_message_sent_at = message.sent_at

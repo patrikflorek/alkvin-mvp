@@ -78,7 +78,8 @@ class BotsScreen(MDScreen):
         if Bot.select().count() == 0:
             Bot.create(name="Dummy Bot")
 
-        bots = Bot.select(Bot.id, Bot.name, Bot.generation_prompt)
+        # Get all bots sorted by name
+        bots = Bot.select(Bot.id, Bot.name, Bot.generation_prompt).order_by(Bot.name)
         self.bot_items = [
             {
                 "bot_id": bot.id,

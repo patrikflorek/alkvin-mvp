@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from peewee import CharField, DateTimeField, ForeignKeyField
@@ -5,6 +6,8 @@ from peewee import CharField, DateTimeField, ForeignKeyField
 from alkvin.db import BaseModel
 
 from alkvin.entities.chat import Chat
+
+from alkvin.config import CHATS_AUDIO_DIR
 
 
 class AssistantMessage(BaseModel):
@@ -17,3 +20,6 @@ class AssistantMessage(BaseModel):
 
     speech_file = CharField(null=True)
     speech_received_at = DateTimeField(null=True)
+
+    def get_speech_path(self):
+        return os.path.join(CHATS_AUDIO_DIR, str(self.chat.id), self.speech_file)

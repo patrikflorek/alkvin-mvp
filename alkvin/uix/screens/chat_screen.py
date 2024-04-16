@@ -110,6 +110,8 @@ Builder.load_string(
                     adaptive_height: True
                 
     AudioRecorderBox:
+        id: chat_screen_audio_recorder
+
         pos_hint: {"y": 0}
 """
 )
@@ -149,14 +151,26 @@ class ChatScreen(MDScreen):
             ],
         )
 
+        self.ids.chat_screen_audio_recorder.on_recording_finished_callback = (
+            self.process_audio_recording
+        )
+
+    def process_audio_recording(self, audio_recording_path):
+        print("Processing the audio recording:", audio_recording_path)
+
     def _on_select_user_callback(self, user_id):
         self.chat.user = User.get(User.id == user_id)
+
+        if self.chat.bot is None:
+            self.select_bot()
 
     def _on_select_bot_callback(self, bot_id):
         self.chat.bot = Bot.get(Bot.id == bot_id)
 
     def _create_chat(self):
-        self.chat = Chat.create(title="NEW CHAT")
+        self.chat = Chat.create(
+            title=f"NEW CHAT [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]"
+        )
 
         self.chat_id = self.chat.id
         self.chat_title = self.chat.title
@@ -168,14 +182,15 @@ class ChatScreen(MDScreen):
         self.chat_title = self.chat.title
         self.chat_summary = self.chat.summary
 
-    def _message_items_sort_key(self, message):
-        is_unsent_user_message = (
-            message["role"] == "user" and message["data"].sent_at is None
+    def _message_items_sort_key(self, message_item):
+        role, message = message_item["role"], message_item["message"]
+
+        is_unsent_user_message = role == "user" and message.sent_at is None
+        in_chat_at = (message == "user" and message.sent_at) or (
+            message == "assistant" and message.completion_received_at
         )
-        displayed_in_chat_at = (
-            message["role"] == "user" and message["data"].sent_at
-        ) or (message["role"] == "assistant" and message["data"].completion_received_at)
-        return (is_unsent_user_message, displayed_in_chat_at)
+
+        return (is_unsent_user_message, in_chat_at)
 
     def on_pre_enter(self):
         if self.chat_id is None:
@@ -186,6 +201,7 @@ class ChatScreen(MDScreen):
         user_message_items = [
             {"role": "user", "message": message} for message in self.chat.user_messages
         ]
+
         assistant_message_items = [
             {"role": "assistant", "message": message}
             for message in self.chat.assistant_messages
@@ -202,28 +218,16 @@ class ChatScreen(MDScreen):
             message = message_item["message"]
             if sender_role == "user":
                 self.ids.chat_screen_messages_container.add_widget(
-                    UserMessageCard(
-                        user_audio_file=message.audio_file,
-                        user_audio_created_at=message.audio_created_at,
-                        user_audio_transcript=message.transcript,
-                        user_audio_transcript_received_at=message.transcript_received_at,
-                        user_message_sent_at=message.sent_at,
-                    )
+                    UserMessageCard(message)
                 )
             elif sender_role == "assistant":
                 self.ids.chat_screen_messages_container.add_widget(
-                    AssistantMessageCard(
-                        assistant_completion=message.completion,
-                        assistant_completion_received_at=message.completion_received_at,
-                        assistant_speech_file=message.speech_file,
-                        assistant_speech_audio_received_at=message.speech_received_at,
-                    )
+                    AssistantMessageCard(message)
                 )
 
         if self.chat.user is None:
             self.select_user()
-
-        if self.chat.bot is None:
+        elif self.chat.bot is None:
             self.select_bot()
 
     def scroll_to_bottom(self):

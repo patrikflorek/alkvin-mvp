@@ -6,11 +6,16 @@ This module defines the AudioRecorderBox class, which is a custom box layout
 widget used for recording audio.
 """
 
+import os
+import uuid
+
 from kivy.lang import Builder
 from kivy.properties import StringProperty
 
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.behaviors import CommonElevationBehavior
+
+from alkvin.config import AUDIO_RECORDING_DIR
 
 
 Builder.load_string(
@@ -37,7 +42,7 @@ Builder.load_string(
                 if root.state == "recording" 
                 else app.theme_cls.colors["Gray"]["300"])
             
-            on_release: root.toggle_recording()  # TODO: Implement record audio
+            on_release: root.state = "stopped" if root.state == "recording" else "recording"
 
     MDAnchorLayout:
         anchor_x: "right"
@@ -67,10 +72,18 @@ class AudioRecorderBox(MDBoxLayout, CommonElevationBehavior):
 
     state = StringProperty("stopped")
 
-    def toggle_recording(self):
-        if self.state == "stopped":
-            self.state = "recording"
-            print("Start recording audio")
-        else:
-            self.state = "stopped"
-            print("Stop recording audio")
+    recording_path = None
+
+    def on_state(self, instance, value):
+        if value == "recording":
+            os.makedirs(AUDIO_RECORDING_DIR, exist_ok=True)
+            self.recording_path = os.path.join(
+                AUDIO_RECORDING_DIR, f"{uuid.uuid4()}.wav"
+            )
+
+        if value == "stopped":
+            self.on_recording_finished_callback(self.recording_path)
+            self.recording_path = None
+
+    def on_recording_finished_callback(self, recording_path):
+        """Implemented in the caller class."""

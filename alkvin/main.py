@@ -30,7 +30,7 @@ from alkvin.entities.chat import Chat
 from alkvin.entities.user import User
 from alkvin.entities.bot import Bot
 from alkvin.entities.user_message import UserMessage
-from alkvin.entities.bot_message import BotMessage
+from alkvin.entities.assistant_message import AssistantMessage
 
 
 class AppRoot(ScreenManager):
@@ -71,7 +71,6 @@ class AppRoot(ScreenManager):
             if id_attribute is not None and hasattr(screen, id_attribute):
                 setattr(screen, id_attribute, None)
 
-        print("Screen name from ScreenManager:", screen_name, screen_data)
         self.current = screen_name
 
     def switch_back(self):
@@ -94,7 +93,7 @@ class MainApp(MDApp):
 
     def on_start(self):
         db.connect()
-        db.create_tables([Chat, User, Bot, UserMessage, BotMessage])
+        db.create_tables([Chat, User, Bot, UserMessage, AssistantMessage])
 
         if get_key(".env", "OPENAI_API_KEY") is None:
             Clock.schedule_once(
