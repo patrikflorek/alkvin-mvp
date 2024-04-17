@@ -84,6 +84,10 @@ class SelectUserDialog(MDDialog):
 
         self.app = MDApp.get_running_app()
 
+    def open(self, items_data, chat_user_id=None):
+        if chat_user_id is not None:
+            self.selected_user_id = chat_user_id
+
     def _create_new_user(self, instance):
         self.dismiss()
 

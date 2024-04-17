@@ -16,13 +16,20 @@ class Bot(BaseModel):
     def get_speech_voices():
         return ("alloy", "echo", "fable", "onyx", "nova", "shimmer")
 
-    def get_new_name():
-        """Get a new bot name."""
-        return f"NEW BOT [{Bot.select().count() + 1}]"
+    def new():
+        """Get a new bot."""
+        return Bot.create(name=f"NEW BOT [{Bot.select().count() + 1}]")
 
-    def get_replica_name(self):
-        """Get a replica bot name."""
-        return f"{self.name} REPLICA [{Bot.select().count() + 1}]"
+    def replicate(self):
+        """Get a replica of the bot."""
+        return Bot.create(
+            name=f"{self.name} REPLICA [{Bot.select().count() + 1}]",
+            language=self.language,
+            generation_prompt=self.generation_prompt,
+            summarization_prompt=self.summarization_prompt,
+            speech_prompt=self.speech_prompt,
+            speech_voice=self.speech_voice,
+        )
 
     def get_taken_names(self):
         """Get taken bot names."""

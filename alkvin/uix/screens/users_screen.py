@@ -10,6 +10,7 @@ for creating new users.
 from kivy.lang import Builder
 from kivy.properties import ListProperty, NumericProperty, StringProperty
 
+from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineListItem
 
@@ -25,7 +26,7 @@ Builder.load_string(
     text: root.user_name
     secondary_text: root.user_introduction
 
-    on_release: app.root.switch_screen("user_screen", {"user_id": self.user_id})
+    on_release: root.switch_to_user()
 
     
 <UsersScreen>:
@@ -54,23 +55,11 @@ Builder.load_string(
         anchor_x: "right"
         anchor_y: "bottom"
         padding: dp(48)
-        
-        MDFloatingActionButton:
-            icon: "account-plus"
-            type: "large"
-            elevation_normal: 12
-            
-            on_release: app.root.switch_screen("user_screen", {"user_id": None})
-
-    MDAnchorLayout:
-        anchor_x: "right"
-        anchor_y: "bottom"
-        padding: dp(48)
 
         FAB:   
             icon: "account-plus"
             
-            on_release: app.root.switch_screen("user_screen", {"user_id": None})
+            on_release: root.switch_to_new_user()
 """
 )
 
@@ -82,22 +71,29 @@ class UsersScreenUserItem(TwoLineListItem):
     user_name = StringProperty()
     user_introduction = StringProperty()
 
+    def switch_to_user(self):
+        app = MDApp.get_running_app()
+        user = User.get_by_id(self.user_d)
+        app.root.switch_to_user("user_screen", user)
+
 
 class UsersScreen(MDScreen):
     """Screen for displaying a list of available users."""
 
+    users = ListProperty()
     user_items = ListProperty()
 
     def on_pre_enter(self):
-        if User.select().count() == 0:
-            User.create(name="Dummy User")
-
-        users = User.select(User.id, User.name, User.introduction).order_by(User.name)
         self.user_items = [
             {
                 "user_id": user.id,
                 "user_name": user.name,
                 "secondary_text": user.introduction,
             }
-            for user in users
+            for user in self.users
         ]
+
+    def switch_to_new_user(self):
+        new_user = User.new()
+
+        self.manager.switch_screen("new_user_screen", new_user)

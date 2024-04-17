@@ -3,23 +3,21 @@ User Screen
 ===========
 
 This module defines the UserScreen class which represents the screen
-for creating and editing virtual users. The UserScreen class also allows
-"cloning" and deleting a viewed user.
+for editing virtual users. The UserScreen class also allows to invoke
+"cloning" and deleting the virtual user.
 
 The UserScreen class allows to specify the name and introduction prompt 
 for a virtual user.
 """
 
 from kivy.lang import Builder
-from kivy.properties import NumericProperty, ObjectProperty, StringProperty
+from kivy.properties import ObjectProperty, StringProperty
 
-from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.button import MDFlatButton
 from kivymd.uix.screen import MDScreen
 
 from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
-
-from alkvin.entities.user import User
 
 
 Builder.load_string(
@@ -73,7 +71,6 @@ class UserScreen(MDScreen):
     """Screen for creating, editing, replicating, and deleting virtual users."""
 
     user = ObjectProperty(allownone=True)
-    user_id = NumericProperty(allownone=True)
 
     user_name = StringProperty()
     user_introduction = StringProperty()
@@ -99,20 +96,13 @@ class UserScreen(MDScreen):
             ],
         )
 
-    def _create_user(self):
-        self.user = User.create(name=User.get_new_name())
-
-        self.user_id = self.user.id
+    def on_pre_enter(self):
         self.user_name = self.user.name
         self.user_introduction = self.user.introduction
 
-    def _load_user(self):
-        self.user = User.get(User.id == self.user_id)
+        self.taken_user_names = self.user.get_taken_names()
 
-        self.user_name = self.user.name
-        self.user_introduction = self.user.introduction
-
-    def _save_user(self):
+    def save_user(self):
         if self.user_name == "":
             raise ValueError("User name cannot be empty")
 
@@ -124,21 +114,9 @@ class UserScreen(MDScreen):
 
         self.user.save()
 
-    def on_pre_enter(self):
-        self.ids.user_screen_top_app_bar.title = (
-            "User" if self.user_id is not None else "New user"
-        )
-
-        if self.user_id is None:
-            self._create_user()
-        else:
-            self._load_user()
-
-        self.taken_user_names = self.user.get_taken_names()
-
-    def _can_safely_leave(self):
+    def has_valid_data(self):
         try:
-            self._save_user()
+            self.save_user()
         except ValueError as e:
             self.invalid_data_error_snackbar.text = str(e)
             self.invalid_data_error_snackbar.open()
@@ -148,19 +126,16 @@ class UserScreen(MDScreen):
         return True
 
     def switch_back(self):
-        if not self._can_safely_leave():
+        if not self.has_valid_data():
             return
 
-        self.user = None
         self.manager.switch_back()
 
     def clone_user(self):
-        if not self._can_safely_leave():
+        if not self.has_valid_data():
             return
 
-        self.manager.switch_screen(
-            "user_clone_screen", {"original_user_id": self.user.id}
-        )
+        self.manager.switch_screen("user_clone_screen", self.user.clone())
 
     def delete_user(self):
         self.user.delete_instance()

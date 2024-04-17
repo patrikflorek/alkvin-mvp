@@ -9,13 +9,16 @@ class User(BaseModel):
     name = CharField(unique=True)
     introduction = CharField(default="")
 
-    def get_new_name():
-        """Get a new user name."""
-        return f"NEW USER [{User.select().count() + 1}]"
+    def new():
+        """Get a new user."""
+        return User.create(name=f"NEW USER [{User.select().count() + 1}]")
 
-    def get_clone_name(self):
-        """Get a clone user name."""
-        return f"{self.name} CLONE [{User.select().count() + 1}]"
+    def clone(self):
+        """Get a clone of the user."""
+        return User.create(
+            name=f"{self.name} CLONE [{User.select().count() + 1}]",
+            introduction=self.introduction,
+        )
 
     def get_taken_names(self):
         """Get taken user names."""

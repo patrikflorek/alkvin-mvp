@@ -99,7 +99,6 @@ class BotScreen(MDScreen):
     """Screen for creating, editing, replicating, and deleting chat bots."""
 
     bot = ObjectProperty(allownone=True)
-    bot_id = NumericProperty(allownone=True)
 
     bot_name = StringProperty()
     bot_language = StringProperty()
@@ -108,10 +107,10 @@ class BotScreen(MDScreen):
     bot_speech_prompt = StringProperty()
     bot_speech_voice = StringProperty()
 
-    delete_bot_dialog = None
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.invalid_data_error_snackbar = InvalidDataErrorSnackbar()
+
         speech_voices = Bot.get_speech_voices()
 
         self.speech_voice_menu = MDDropdownMenu(
@@ -143,31 +142,11 @@ class BotScreen(MDScreen):
             ],
         )
 
-        self.invalid_data_error_snackbar = InvalidDataErrorSnackbar()
-
     def set_speech_voice(self, voice):
         self.ids.bot_speech_voice_field.text = voice
         self.speech_voice_menu.dismiss()
 
-    def _create_bot(
-        self,
-        new_bot_name,
-        new_bot_language="",
-        new_bot_generation_prompt="",
-        new_bot_summarization_prompt="",
-        new_bot_speech_prompt="",
-        new_bot_speech_voice="alloy",
-    ):
-        self.bot = Bot.create(
-            name=new_bot_name,
-            language=new_bot_language,
-            generation_prompt=new_bot_generation_prompt,
-            summarization_prompt=new_bot_summarization_prompt,
-            speech_prompt=new_bot_speech_prompt,
-            speech_voice=new_bot_speech_voice,
-        )
-
-        self.bot_id = self.bot.id
+    def on_pre_enter(self):
         self.bot_name = self.bot.name
         self.bot_language = self.bot.language
         self.bot_generation_prompt = self.bot.generation_prompt
@@ -175,17 +154,7 @@ class BotScreen(MDScreen):
         self.bot_speech_prompt = self.bot.speech_prompt
         self.bot_speech_voice = self.bot.speech_voice
 
-    def _load_bot(self):
-        self.bot = Bot.get(Bot.id == self.bot_id)
-
-        print("_load_bot", self.bot.language, type(self.bot.language))
-
-        self.bot_name = self.bot.name
-        self.bot_language = self.bot.language
-        self.bot_generation_prompt = self.bot.generation_prompt
-        self.bot_summarization_prompt = self.bot.summarization_prompt
-        self.bot_speech_prompt = self.bot.speech_prompt
-        self.bot_speech_voice = self.bot.speech_voice
+        self.taken_bot_names = self.bot.get_taken_names()
 
     def _save_bot(self):
         if self.bot_name == "":
@@ -203,28 +172,9 @@ class BotScreen(MDScreen):
 
         self.bot.save()
 
-    def on_pre_enter(self):
-        self.ids.bot_screen_top_app_bar.title = (
-            "Bot" if self.bot_id is not None else "New bot"
-        )
-
-        if self.bot_id is None:
-            self._create_bot(
-                new_bot_name=Bot.get_new_name(),
-                new_bot_language="en",
-                new_bot_generation_prompt="You are a useful assistant.",
-                new_bot_summarization_prompt="Summarize the chat so far.",
-                new_bot_speech_prompt="Following is response from a chat bot.",
-                new_bot_speech_voice="alloy",
-            )
-        else:
-            self._load_bot()
-
-        self.taken_bot_names = self.bot.get_taken_names()
-
-    def _can_safely_leave(self):
+    def has_valid_data(self):
         try:
-            self._save_bot()
+            self.save_bot()
         except ValueError as e:
             self.invalid_data_error_snackbar.text = str(e)
             self.invalid_data_error_snackbar.open()
@@ -234,19 +184,16 @@ class BotScreen(MDScreen):
         return True
 
     def switch_back(self):
-        if not self._can_safely_leave():
+        if not self.has_valid_data():
             return
 
-        self.bot = None
         self.manager.switch_back()
 
     def replicate_bot(self):
-        if not self._can_safely_leave():
+        if not self.has_valid_data():
             return
 
-        self.manager.switch_screen(
-            "bot_replica_screen", {"prototype_bot_id": self.bot_id}
-        )
+        self.manager.switch_screen("bot_replica_screen", self.bot.replicate())
 
     def delete_bot(self):
         self.bot.delete_instance()

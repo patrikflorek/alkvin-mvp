@@ -10,6 +10,7 @@ for creating new bots.
 from kivy.lang import Builder
 from kivy.properties import ListProperty, NumericProperty, StringProperty
 
+from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineListItem
 
@@ -24,7 +25,7 @@ Builder.load_string(
     text: root.bot_name
     secondary_text: root.bot_instructions
 
-    on_release: app.root.switch_screen("bot_screen", {"bot_id": self.bot_id})
+    on_release: root.switch_to_bot()
 
 <BotsScreen>:
     MDBoxLayout:
@@ -56,35 +57,36 @@ Builder.load_string(
         FAB:
             icon: "robot-love"
             
-            on_release: app.root.switch_screen("bot_screen", {"bot_id": None})
+            on_release: root.switch_to_new_bot()
 """
 )
 
 
 class BotsScreenBotItem(TwoLineListItem):
-    """Custom list item for displaying a chat bot."""
+    """Custom list item for displaying chat bots."""
 
     bot_id = NumericProperty()
     bot_name = StringProperty()
     bot_instructions = StringProperty()
 
+    def switch_to_bot(self):
+        app = MDApp.get_running_app()
+        bot = Bot.get_by_id(self.bot_id)
+        app.root.switch_to_bot("bot_screen", bot)
+
 
 class BotsScreen(MDScreen):
     """Screen for displaying a list of available chat bots."""
 
+    bots = ListProperty()
     bot_items = ListProperty()
 
     def on_pre_enter(self):
-        if Bot.select().count() == 0:
-            Bot.create(name="Dummy Bot")
-
-        # Get all bots sorted by name
-        bots = Bot.select(Bot.id, Bot.name, Bot.generation_prompt).order_by(Bot.name)
         self.bot_items = [
             {
                 "bot_id": bot.id,
                 "bot_name": bot.name,
                 "bot_instructions": bot.generation_prompt,
             }
-            for bot in bots
+            for bot in self.bots
         ]
