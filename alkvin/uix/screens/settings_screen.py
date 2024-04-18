@@ -12,7 +12,6 @@ from dotenv import get_key, set_key
 from kivy.lang import Builder
 from kivy.properties import StringProperty
 
-from kivymd.uix.label import MDLabel
 from kivymd.uix.screen import MDScreen
 
 from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
@@ -70,17 +69,6 @@ class SettingsScreen(MDScreen):
         self.missing_api_key_snackbar = InvalidDataErrorSnackbar()
         self.missing_api_key_snackbar.text = "OpenAI API key is required"
 
-        # self.missing_api_key_snackbar.add_widget(
-        #     MDLabel(text="OpenAI API key is required", padding="10dp")
-        # )
-        # self.missing_api_key_snackbar.add_widget(
-        #     MDSnackbarActionButton(
-        #         text="OK",
-        #         on_release=self.missing_api_key_snackbar.dismiss,
-        #         pos_hint={"right": 1, "center_y": 0.5},
-        #     )
-        # )
-
     def on_pre_enter(self):
         openai_api_key = get_key(".env", "OPENAI_API_KEY")
 
@@ -94,7 +82,5 @@ class SettingsScreen(MDScreen):
             self.missing_api_key_snackbar.open()
             return
 
-        self.manager.switch_back()
-
-    def on_pre_leave(self):
         set_key(".env", "OPENAI_API_KEY", self.openai_api_key)
+        self.manager.switch_back()

@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from peewee import CharField
 
 from alkvin.db import BaseModel
@@ -11,12 +13,12 @@ class User(BaseModel):
 
     def new():
         """Get a new user."""
-        return User.create(name=f"NEW USER [{User.select().count() + 1}]")
+        return User.create(name=f"NEW USER [{uuid4.hex[:8]}]")
 
     def clone(self):
         """Get a clone of the user."""
         return User.create(
-            name=f"{self.name} CLONE [{User.select().count() + 1}]",
+            name=f"{self.name} CLONE [{uuid4.hex[:8]}]",
             introduction=self.introduction,
         )
 

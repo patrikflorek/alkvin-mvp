@@ -10,7 +10,6 @@ for creating new bots.
 from kivy.lang import Builder
 from kivy.properties import ListProperty, NumericProperty, StringProperty
 
-from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineListItem
 
@@ -21,12 +20,14 @@ Builder.load_string(
     """
 #:import FAB alkvin.uix.components.fab.FAB
 
+
 <BotsScreenBotItem>:
     text: root.bot_name
     secondary_text: root.bot_instructions
 
-    on_release: root.switch_to_bot()
+    on_release: app.root.switch_screen("bot_screen", root.bot_id)
 
+    
 <BotsScreen>:
     MDBoxLayout:
         orientation: "vertical"
@@ -69,24 +70,24 @@ class BotsScreenBotItem(TwoLineListItem):
     bot_name = StringProperty()
     bot_instructions = StringProperty()
 
-    def switch_to_bot(self):
-        app = MDApp.get_running_app()
-        bot = Bot.get_by_id(self.bot_id)
-        app.root.switch_to_bot("bot_screen", bot)
-
 
 class BotsScreen(MDScreen):
     """Screen for displaying a list of available chat bots."""
 
-    bots = ListProperty()
     bot_items = ListProperty()
 
     def on_pre_enter(self):
+        bots = Bot.select(Bot.id, Bot.name, Bot.generation_prompt).order_by(Bot.name)
         self.bot_items = [
             {
                 "bot_id": bot.id,
                 "bot_name": bot.name,
                 "bot_instructions": bot.generation_prompt,
             }
-            for bot in self.bots
+            for bot in bots
         ]
+
+    def switch_to_new_bot(self):
+        new_bot = Bot.new()
+
+        self.manager.switch_screen("bot_screen", new_bot.id)

@@ -11,13 +11,14 @@ for a virtual user.
 """
 
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty, StringProperty
+from kivy.properties import NumericProperty, ObjectProperty, StringProperty
 
-from kivymd.uix.dialog import MDDialog
-from kivymd.uix.button import MDFlatButton
 from kivymd.uix.screen import MDScreen
 
 from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
+from alkvin.uix.components.delete_user_dialog import DeleteUserDialog
+
+from alkvin.entities.user import User
 
 
 Builder.load_string(
@@ -39,7 +40,7 @@ Builder.load_string(
             right_action_items:
                 [
                 ["content-copy", lambda x: root.clone_user(), "Clone", "Clone"],
-                ["delete", lambda x: root.delete_user_dialog.open(), "Delete", "Delete"]
+                ["delete", lambda x: root.delete_user_dialog.open(root.user_name, root.delete_user), "Delete", "Delete"]
                 ]
 
         ScrollView:
@@ -71,6 +72,7 @@ class UserScreen(MDScreen):
     """Screen for creating, editing, replicating, and deleting virtual users."""
 
     user = ObjectProperty(allownone=True)
+    user_id = NumericProperty(allownone=True)
 
     user_name = StringProperty()
     user_introduction = StringProperty()
@@ -80,23 +82,11 @@ class UserScreen(MDScreen):
 
         self.invalid_data_error_snackbar = InvalidDataErrorSnackbar()
 
-        self.delete_user_dialog = MDDialog(
-            title="Delete user",
-            text="Are you sure you want to delete this user?",
-            buttons=[
-                MDFlatButton(
-                    text="CANCEL",
-                    on_release=lambda x: self.delete_user_dialog.dismiss(),
-                ),
-                MDFlatButton(
-                    text="DELETE",
-                    theme_text_color="Error",
-                    on_release=lambda x: self.delete_user(),
-                ),
-            ],
-        )
+        self.delete_user_dialog = DeleteUserDialog()
 
     def on_pre_enter(self):
+        self.user = User.get_by_id(self.user_id)
+
         self.user_name = self.user.name
         self.user_introduction = self.user.introduction
 
@@ -135,7 +125,9 @@ class UserScreen(MDScreen):
         if not self.has_valid_data():
             return
 
-        self.manager.switch_screen("user_clone_screen", self.user.clone())
+        user_clone = self.user.clone()
+
+        self.manager.switch_screen("user_clone_screen", user_clone.id)
 
     def delete_user(self):
         self.user.delete_instance()

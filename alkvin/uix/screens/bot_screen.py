@@ -13,12 +13,11 @@ text generation instructions, and text-to-speech settings for a chat bot.
 from kivy.lang import Builder
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty
 
-from kivymd.uix.dialog import MDDialog
-from kivymd.uix.button import MDFlatButton
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.screen import MDScreen
 
 from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
+from alkvin.uix.components.delete_bot_dialog import DeleteBotDialog
 
 from alkvin.entities.bot import Bot
 
@@ -41,7 +40,7 @@ Builder.load_string(
             right_action_items: 
                 [
                 ["content-copy", lambda x: root.replicate_bot(), "Replicate", "Replicate"],
-                ["delete", lambda x: root.delete_bot_dialog.open(), "Delete", "Delete"]
+                ["delete", lambda x: root.delete_bot_dialog.open(root.bot_name, root.delete_bot), "Delete", "Delete"]
                 ]
         
         ScrollView:
@@ -99,6 +98,7 @@ class BotScreen(MDScreen):
     """Screen for creating, editing, replicating, and deleting chat bots."""
 
     bot = ObjectProperty(allownone=True)
+    bot_id = NumericProperty(allownone=True)
 
     bot_name = StringProperty()
     bot_language = StringProperty()
@@ -109,10 +109,10 @@ class BotScreen(MDScreen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
         self.invalid_data_error_snackbar = InvalidDataErrorSnackbar()
 
         speech_voices = Bot.get_speech_voices()
-
         self.speech_voice_menu = MDDropdownMenu(
             caller=self.ids.bot_speech_voice_field,
             position="center",
@@ -126,27 +126,15 @@ class BotScreen(MDScreen):
             ],
         )
 
-        self.delete_bot_dialog = MDDialog(
-            title="Delete bot",
-            text="Are you sure you want to delete this bot?",
-            buttons=[
-                MDFlatButton(
-                    text="CANCEL",
-                    on_release=lambda x: self.delete_bot_dialog.dismiss(),
-                ),
-                MDFlatButton(
-                    text="DELETE",
-                    theme_text_color="Error",
-                    on_release=lambda x: self.delete_bot(),
-                ),
-            ],
-        )
+        self.delete_bot_dialog = DeleteBotDialog()
 
     def set_speech_voice(self, voice):
         self.ids.bot_speech_voice_field.text = voice
         self.speech_voice_menu.dismiss()
 
     def on_pre_enter(self):
+        self.bot = Bot.get_by_id(self.bot_id)
+
         self.bot_name = self.bot.name
         self.bot_language = self.bot.language
         self.bot_generation_prompt = self.bot.generation_prompt
@@ -156,7 +144,7 @@ class BotScreen(MDScreen):
 
         self.taken_bot_names = self.bot.get_taken_names()
 
-    def _save_bot(self):
+    def save_bot(self):
         if self.bot_name == "":
             raise ValueError("Bot name cannot be empty")
 
@@ -193,7 +181,9 @@ class BotScreen(MDScreen):
         if not self.has_valid_data():
             return
 
-        self.manager.switch_screen("bot_replica_screen", self.bot.replicate())
+        bot_replica = self.bot.replicate()
+
+        self.manager.switch_screen("bot_replica_screen", bot_replica.id)
 
     def delete_bot(self):
         self.bot.delete_instance()

@@ -55,35 +55,36 @@ class AppRoot(ScreenManager):
         self.add_widget(BotReplicateScreen(name="bot_replicate_screen"))
         self.add_widget(SettingsScreen(name="settings_screen"))
 
-    def push_to_history(self, screen_name, screen_data=None):
-        screen_history_item = (screen_name, screen_data)
+    def push_to_history(self, screen_name, screen_entity_id):
+        screen_history_item = (screen_name, screen_entity_id)
         if screen_history_item in self.screen_history:
             self.screen_history.remove(screen_history_item)
         self.screen_history.append(screen_history_item)
 
-    def switch_screen(self, screen_name, screen_data=None, direction="forward"):
-        self.push_to_history(screen_name, screen_data)
+    def switch_screen(self, screen_name, screen_entity_id=None, direction="forward"):
+        self.push_to_history(screen_name, screen_entity_id)
         self.transition.direction = "right" if direction == "back" else "left"
 
         screen = self.get_screen(screen_name)
-        screen_data_object_name = screen_name.split("_")[0]
-        if hasattr(screen, screen_data_object_name):
-            setattr(screen, screen_data_object_name, screen_data)
+        screen_entity_id_attribute = screen_name.split("_")[0] + "_id"
+        if hasattr(screen, screen_entity_id_attribute):
+            setattr(screen, screen_entity_id_attribute, screen_entity_id)
 
         self.current = screen_name
 
     def pop_from_history(self):
-        current_screen, current_screen_data = self.screen_history.pop()
+        current_screen_name, current_screen_entity_id = self.screen_history.pop()
+
         # Remove original/prototype screen from the history when switching back from user clone screen and robot replica screen, respectively.
-        if current_screen in ["user_clone_screen", "bot_replica_screen"]:
+        if current_screen_name in ["user_clone_screen", "bot_replica_screen"]:
             self.screen_history.pop()
 
-        return self.screen_history[-1]  # screen_name, screen_data
+        return self.screen_history[-1]  # screen_name, screen_entity_id
 
     def switch_back(self):
         if len(self.screen_history) > 1:
-            screen_name, screen_data = self.pop_from_history()
-            self.switch_screen(screen_name, screen_data, direction="back")
+            screen_name, screen_entity_id = self.pop_from_history()
+            self.switch_screen(screen_name, screen_entity_id, direction="back")
 
 
 class MainApp(MDApp):

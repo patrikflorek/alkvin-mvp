@@ -12,10 +12,6 @@ from kivy.lang import Builder
 
 from kivymd.uix.screen import MDScreen
 
-from alkvin.entities.chat import Chat
-from alkvin.entities.user import User
-from alkvin.entities.bot import Bot
-
 
 Builder.load_string(
     """
@@ -78,7 +74,7 @@ Builder.load_string(
                         icon: "forum"
                         text: "Chats"
                         
-                        on_release: app.root.switch_to_chats()
+                        on_release: app.root.switch_screen("chats_screen")
 
                 MDAnchorLayout:
                     anchor_x: "center"
@@ -92,7 +88,7 @@ Builder.load_string(
                         icon: "account-group"
                         text: "Users"
                         
-                        on_release: root.switch_to_users()
+                        on_release: app.root.switch_screen("users_screen")
 
                 MDAnchorLayout:
                     anchor_x: "center"
@@ -106,7 +102,7 @@ Builder.load_string(
                         icon: "robot"
                         text: "Bots"
                         
-                        on_release: root.switch_to_bots()
+                        on_release: app.root.switch_screen("bots_screen")
 
                 MDAnchorLayout:
                     anchor_x: "center"
@@ -120,38 +116,10 @@ Builder.load_string(
                         icon: "cogs"
                         text: "Settings"
                         
-                        on_release: root.switch_to_settings()
+                        on_release: app.root.switch_screen("settings_screen")
 """
 )
 
 
 class HomeScreen(MDScreen):
     """Main screen of the Alkvin MVP application."""
-
-    def switch_to_chats(self):
-        """Switch to the chats screen."""
-        chats = Chat.select().order_by(Chat.updated_at.desc())
-
-        self.manager.switch_screen("chats_screen", chats)
-
-    def switch_to_users(self):
-        """Switch to the users screen."""
-        if User.select().count() == 0:
-            User.create(name="Dummy User")
-
-        users = User.select().order_by(User.name)
-
-        self.manager.switch_screen("users_screen", users)
-
-    def switch_to_bots(self):
-        """Switch to the bots screen."""
-        if Bot.select().count() == 0:
-            Bot.create(name="Dummy Bot")
-
-        bots = Bot.select().order_by(Bot.name)
-
-        self.manager.switch_screen("bots_screen", bots)
-
-    def switch_to_settings(self):
-        """Switch to the settings screen."""
-        self.manager.switch_screen("settings_screen")
