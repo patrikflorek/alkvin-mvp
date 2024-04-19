@@ -128,8 +128,11 @@ class BotScreen(MDScreen):
 
         self.delete_bot_dialog = DeleteBotDialog()
 
+    def on_bot_speech_voice(self, instance, value):
+        self.ids.bot_speech_voice_field.text = value
+
     def set_speech_voice(self, voice):
-        self.ids.bot_speech_voice_field.text = voice
+        self.bot_speech_voice = voice
         self.speech_voice_menu.dismiss()
 
     def on_pre_enter(self):
@@ -183,7 +186,7 @@ class BotScreen(MDScreen):
 
         bot_replica = self.bot.replicate()
 
-        self.manager.switch_screen("bot_replica_screen", bot_replica.id)
+        self.manager.switch_screen("bot_replicate_screen", bot_replica.id)
 
     def delete_bot(self):
         self.bot.delete_instance()

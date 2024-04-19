@@ -90,6 +90,7 @@ class ChatsScreen(MDScreen):
         ]
 
     def switch_to_new_chat(self):
-        new_chat = Chat.create()
+        new_chat = Chat.new()
+        print("switch_to_new_chat", new_chat.id, new_chat.title, new_chat.summary)
 
         self.manager.switch_screen("chat_screen", new_chat.id)

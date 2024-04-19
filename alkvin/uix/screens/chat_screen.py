@@ -131,7 +131,7 @@ class ChatScreen(MDScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.select_user_dialog = SelectUserDialog(self._on_select_user_callback)
+        self.select_user_dialog = SelectUserDialog(self.on_select_user_callback)
 
         self.select_bot_dialog = SelectBotDialog(self._on_select_bot_callback)
 
@@ -158,8 +158,9 @@ class ChatScreen(MDScreen):
     def process_audio_recording(self, audio_recording_path):
         print("Processing the audio recording:", audio_recording_path)
 
-    def _on_select_user_callback(self, user_id):
-        self.chat.user = User.get(User.id == user_id)
+    def on_select_user_callback(self, user_id):
+        self.chat.user = User.get_by_id(user_id)
+        self.chat.save()
 
         if self.chat.bot is None:
             self.select_bot()

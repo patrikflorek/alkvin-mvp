@@ -77,6 +77,9 @@ class UsersScreen(MDScreen):
     user_items = ListProperty()
 
     def on_pre_enter(self):
+        if User.select().count() == 0:
+            User.create(name="Dummy User")
+
         users = User.select(User.id, User.name, User.introduction).order_by(User.name)
         self.user_items = [
             {
@@ -90,4 +93,4 @@ class UsersScreen(MDScreen):
     def switch_to_new_user(self):
         new_user = User.new()
 
-        self.manager.switch_screen("new_user_screen", new_user.id)
+        self.manager.switch_screen("user_create_screen", new_user.id)

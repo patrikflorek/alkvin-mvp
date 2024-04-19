@@ -27,7 +27,7 @@ class DeleteUserDialog(MDDialog):
         pass
 
     def open(self, user_name, on_delete_user_callback):
-        self.text = f"Are you sure you want to delete user {user_name}?"
+        self.text = f"Are you sure you want to delete user \n[b]{user_name}[/b]?"
         self.on_delete_user_callback = on_delete_user_callback
 
         super().open()

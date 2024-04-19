@@ -77,6 +77,9 @@ class BotsScreen(MDScreen):
     bot_items = ListProperty()
 
     def on_pre_enter(self):
+        if Bot.select().count() == 0:
+            Bot.create(name="Dummy Bot")
+
         bots = Bot.select(Bot.id, Bot.name, Bot.generation_prompt).order_by(Bot.name)
         self.bot_items = [
             {
@@ -90,4 +93,4 @@ class BotsScreen(MDScreen):
     def switch_to_new_bot(self):
         new_bot = Bot.new()
 
-        self.manager.switch_screen("bot_screen", new_bot.id)
+        self.manager.switch_screen("bot_create_screen", new_bot.id)

@@ -27,7 +27,7 @@ class DeleteBotDialog(MDDialog):
         pass
 
     def open(self, bot_name, on_delete_bot_callback):
-        self.text = f"Are you sure you want to delete bot {bot_name}?"
+        self.text = f"Are you sure you want to delete bot \n[b]{bot_name}[/b]?"
         self.on_delete_bot_callback = on_delete_bot_callback
 
         super().open()

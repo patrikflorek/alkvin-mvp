@@ -7,7 +7,7 @@ widget used for recording audio.
 """
 
 import os
-import uuid
+from uuid import uuid4
 
 from kivy.lang import Builder
 from kivy.properties import StringProperty
@@ -78,7 +78,7 @@ class AudioRecorderBox(MDBoxLayout, CommonElevationBehavior):
         if value == "recording":
             os.makedirs(AUDIO_RECORDING_DIR, exist_ok=True)
             self.recording_path = os.path.join(
-                AUDIO_RECORDING_DIR, f"{uuid.uuid4()}.wav"
+                AUDIO_RECORDING_DIR, f"{uuid4().hex}.wav"
             )
 
         if value == "stopped":

@@ -76,7 +76,7 @@ class AppRoot(ScreenManager):
         current_screen_name, current_screen_entity_id = self.screen_history.pop()
 
         # Remove original/prototype screen from the history when switching back from user clone screen and robot replica screen, respectively.
-        if current_screen_name in ["user_clone_screen", "bot_replica_screen"]:
+        if current_screen_name in ["user_clone_screen", "bot_replicate_screen"]:
             self.screen_history.pop()
 
         return self.screen_history[-1]  # screen_name, screen_entity_id

@@ -4,6 +4,8 @@ from peewee import CharField
 
 from alkvin.db import BaseModel
 
+SPEECH_VOICES = ("alloy", "echo", "fable", "onyx", "nova", "shimmer")
+
 
 class Bot(BaseModel):
     """Bot model class for chat bots."""
@@ -13,19 +15,19 @@ class Bot(BaseModel):
     generation_prompt = CharField(default="")
     summarization_prompt = CharField(default="")
     speech_prompt = CharField(default="")
-    speech_voice = CharField(default="")
+    speech_voice = CharField(default=SPEECH_VOICES[0])
 
     def get_speech_voices():
-        return ("alloy", "echo", "fable", "onyx", "nova", "shimmer")
+        return SPEECH_VOICES
 
     def new():
         """Get a new bot."""
-        return Bot.create(name=f"NEW BOT [{uuid4.hex[:8]}]")
+        return Bot.create(name=f"NEW BOT [{uuid4().hex[:8]}]")
 
     def replicate(self):
         """Get a replica of the bot."""
         return Bot.create(
-            name=f"{self.name} REPLICA [{uuid4.hex[:8]}]",
+            name=f"{self.name} REPLICA [{uuid4().hex[:8]}]",
             language=self.language,
             generation_prompt=self.generation_prompt,
             summarization_prompt=self.summarization_prompt,

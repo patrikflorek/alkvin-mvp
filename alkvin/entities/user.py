@@ -13,12 +13,12 @@ class User(BaseModel):
 
     def new():
         """Get a new user."""
-        return User.create(name=f"NEW USER [{uuid4.hex[:8]}]")
+        return User.create(name=f"NEW USER [{uuid4().hex[:8]}]")
 
     def clone(self):
         """Get a clone of the user."""
         return User.create(
-            name=f"{self.name} CLONE [{uuid4.hex[:8]}]",
+            name=f"{self.name} CLONE [{uuid4().hex[:8]}]",
             introduction=self.introduction,
         )
 
