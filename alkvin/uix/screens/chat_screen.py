@@ -9,6 +9,8 @@ The ChatScreen class displays the chat messages between the user and
 the chat bot, as well as options to summarize the chat, select a user, select a bot, and delete the chat.
 """
 
+import os
+import shutil
 from datetime import datetime
 
 from kivy.lang import Builder
@@ -31,6 +33,8 @@ from alkvin.uix.components.assistant_message_card import AssistantMessageCard
 from alkvin.entities.bot import Bot
 from alkvin.entities.chat import Chat
 from alkvin.entities.user import User
+from alkvin.entities.user_message import UserMessage
+from alkvin.entities.assistant_message import AssistantMessage
 
 
 Builder.load_string(
@@ -123,17 +127,15 @@ class ChatScreen(MDScreen):
     chat = ObjectProperty(allownone=True)
     chat_id = NumericProperty(allownone=True)
 
-    chat_title = StringProperty("A new chat")
-    chat_summary = StringProperty("This is a summary of the chat so far.")
-
-    chat_messages = ListProperty()
+    chat_title = StringProperty()
+    chat_summary = StringProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.select_user_dialog = SelectUserDialog(self.on_select_user_callback)
 
-        self.select_bot_dialog = SelectBotDialog(self._on_select_bot_callback)
+        self.select_bot_dialog = SelectBotDialog(self.on_select_bot_callback)
 
         self.delete_chat_dialog = MDDialog(
             title="Delete chat",
@@ -152,11 +154,21 @@ class ChatScreen(MDScreen):
         )
 
         self.ids.chat_screen_audio_recorder.on_recording_finished_callback = (
-            self.process_audio_recording
+            self.create_user_message
         )
 
-    def process_audio_recording(self, audio_recording_path):
-        print("Processing the audio recording:", audio_recording_path)
+    def create_user_message(self, audio_recording_path):
+        new_audio_file_name = f"user_{datetime.now().isoformat()}.wav"
+        new_audio_file_path = os.path.join(self.chat.audio_dir, new_audio_file_name)
+        shutil.move(audio_recording_path, new_audio_file_path)
+
+        user_message = UserMessage.create(
+            chat=self.chat, audio_file=new_audio_file_name
+        )
+
+        user_message_widget = UserMessageCard(user_message)
+
+        self.ids.chat_screen_messages_container.add_widget(user_message_widget)
 
     def on_select_user_callback(self, user_id):
         self.chat.user = User.get_by_id(user_id)
@@ -165,94 +177,15 @@ class ChatScreen(MDScreen):
         if self.chat.bot is None:
             self.select_bot()
 
-    def _on_select_bot_callback(self, bot_id):
+    def on_select_bot_callback(self, bot_id):
         self.chat.bot = Bot.get(Bot.id == bot_id)
+        self.chat.save()
 
-    def _create_chat(self):
-        self.chat = Chat.create(
-            title=f"NEW CHAT [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]"
-        )
-
-        self.chat_id = self.chat.id
-        self.chat_title = self.chat.title
-        self.chat_summary = self.chat.summary
-
-    def _load_chat(self):
-        self.chat = Chat.get(Chat.id == self.chat_id)
-
-        self.chat_title = self.chat.title
-        self.chat_summary = self.chat.summary
-
-    def _message_items_sort_key(self, message_item):
-        role, message = message_item["role"], message_item["message"]
-
-        is_unsent_user_message = role == "user" and message.sent_at is None
-        in_chat_at = (message == "user" and message.sent_at) or (
-            message == "assistant" and message.completion_received_at
-        )
-
-        return (is_unsent_user_message, in_chat_at)
-
-    def on_pre_enter(self):
-        if self.chat_id is None:
-            self._create_chat()
-        else:
-            self._load_chat()
-
-        user_message_items = [
-            {"role": "user", "message": message} for message in self.chat.user_messages
-        ]
-
-        assistant_message_items = [
-            {"role": "assistant", "message": message}
-            for message in self.chat.assistant_messages
-        ]
-
-        sorted_message_items = sorted(
-            user_message_items + assistant_message_items,
-            key=self._message_items_sort_key,
-        )
-
-        self.ids.chat_screen_messages_container.clear_widgets()
-        for message_item in sorted_message_items:
-            sender_role = message_item["role"]
-            message = message_item["message"]
-            if sender_role == "user":
-                self.ids.chat_screen_messages_container.add_widget(
-                    UserMessageCard(message)
-                )
-            elif sender_role == "assistant":
-                self.ids.chat_screen_messages_container.add_widget(
-                    AssistantMessageCard(message)
-                )
-
-        if self.chat.user is None:
-            self.select_user()
-        elif self.chat.bot is None:
-            self.select_bot()
-
-    def scroll_to_bottom(self):
-        # If the chat is longer than the screen, scroll to the bottom
-        if (
-            self.height < self.ids.chat_screen_message_container.height
-            and self.ids.chat_screen_scroll.scroll_y != 0
-        ):
-            self.ids.chat_screen_scroll.scroll_y = 0
-
-    def summarize_chat(self):
-        print("Summarizing chat")  # TODO: Implement chat summarization
-
-        self.ids.chat_screen_scroll.scroll_y = 1
-
-    def _create_new_user(self, instance):
-        self.select_user_dialog.dismiss()
-
-        self.manager.switch_screen("user_screen")
-
-    def _create_new_bot(self, instance):
-        self.select_bot_dialog.dismiss()
-
-        self.manager.switch_screen("bot_screen")
+    def create_message_widget(message):
+        if isinstance(message, UserMessage):
+            return UserMessageCard(message)
+        elif isinstance(message, AssistantMessage):
+            return AssistantMessageCard(message)
 
     def select_user(self):
         self.select_user_dialog.update_items(
@@ -273,6 +206,38 @@ class ChatScreen(MDScreen):
         )
 
         self.select_bot_dialog.open()
+
+    def on_pre_enter(self):
+        self.chat = Chat.get_by_id(self.chat_id)
+
+        self.chat_title = self.chat.title
+        self.chat_summary = self.chat.summary
+
+        self.ids.chat_screen_messages_container.clear_widgets()
+        for message in self.chat.messages:
+            if isinstance(message, UserMessage):
+                message_widget = UserMessageCard(message)
+            elif isinstance(message, AssistantMessage):
+                message_widget = AssistantMessageCard(message)
+            self.ids.chat_screen_messages_container.add_widget(message_widget)
+
+        if self.chat.user is None:
+            self.select_user()
+        elif self.chat.bot is None:
+            self.select_bot()
+
+    def scroll_to_bottom(self):
+        # If the chat is longer than the screen, scroll to the bottom
+        if (
+            self.height < self.ids.chat_screen_message_container.height
+            and self.ids.chat_screen_scroll.scroll_y != 0
+        ):
+            self.ids.chat_screen_scroll.scroll_y = 0
+
+    def summarize_chat(self):
+        print("Summarizing chat")  # TODO: Implement chat summarization
+
+        self.ids.chat_screen_scroll.scroll_y = 1
 
     def delete_chat(self):
         self.chat.delete_instance()

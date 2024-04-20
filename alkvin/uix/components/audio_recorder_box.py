@@ -81,6 +81,9 @@ class AudioRecorderBox(MDBoxLayout, CommonElevationBehavior):
                 AUDIO_RECORDING_DIR, f"{uuid4().hex}.wav"
             )
 
+            with open(self.recording_path, "wb") as audio_file:
+                audio_file.write(b"")
+
         if value == "stopped":
             self.on_recording_finished_callback(self.recording_path)
             self.recording_path = None

@@ -22,11 +22,21 @@ class Chat(BaseModel):
     user = ForeignKeyField(User, backref="chats", null=True)
     bot = ForeignKeyField(Bot, backref="chats", null=True)
 
+    @property
+    def messages(self):
+        return sorted(
+            list(self.user_messages) + list(self.assistant_messages),
+            key=lambda message: message.created_at,
+        )
+
+    @property
+    def audio_dir(self):
+        return os.path.join(CHATS_AUDIO_DIR, str(self.id))
+
     @classmethod
     def create(cls, *args, **kwargs):
         chat = super().create(*args, **kwargs)
-        chat_audio_dir = os.path.join(CHATS_AUDIO_DIR, str(chat.id))
-        os.makedirs(chat_audio_dir)
+        os.makedirs(chat.audio_dir)
         return chat
 
     @classmethod

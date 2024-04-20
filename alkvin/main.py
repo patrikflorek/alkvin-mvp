@@ -79,6 +79,21 @@ class AppRoot(ScreenManager):
         if current_screen_name in ["user_clone_screen", "bot_replicate_screen"]:
             self.screen_history.pop()
 
+            screen_to_return_to_name, screen_to_return_to_entity_id = (
+                self.screen_history[-1]
+            )
+
+            if screen_to_return_to_name == "chat_screen":
+                chat = Chat.get_by_id(screen_to_return_to_entity_id)
+
+                if current_screen_name == "user_clone_screen":
+                    chat.user = User.get_by_id(current_screen_entity_id)
+
+                if current_screen_name == "bot_replicate_screen":
+                    chat.bot = Bot.get_by_id(current_screen_entity_id)
+
+                chat.save()
+
         return self.screen_history[-1]  # screen_name, screen_entity_id
 
     def switch_back(self):

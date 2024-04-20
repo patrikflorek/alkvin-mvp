@@ -40,9 +40,9 @@ Builder.load_string(
 
         MDBoxLayout:
             size_hint_y: None
-            height: 0 if root.user_audio_transcript_received_at else self.minimum_height
-            opacity: 0 if root.user_audio_transcript_received_at else 1
-            disabled: root.user_audio_transcript_received_at
+            height: 0 if root.user_transcript_received_at else self.minimum_height
+            opacity: 0 if root.user_transcript_received_at else 1
+            disabled: root.user_transcript_received_at
             
             MDIconButton:
                 icon: "typewriter"
@@ -52,11 +52,11 @@ Builder.load_string(
 
         MDBoxLayout:
             size_hint_y: None
-            height: self.minimum_height if root.user_audio_transcript_received_at else 0
-            opacity: 1 if root.user_audio_transcript_received_at else 0
+            height: self.minimum_height if root.user_transcript_received_at else 0
+            opacity: 1 if root.user_transcript_received_at else 0
             
             MDLabel:
-                text: root.user_audio_transcript_text
+                text: root.user_transcript
                 adaptive_height: True
     
     MDRelativeLayout:
@@ -94,13 +94,13 @@ class UserMessageCard(MDCard):
     """Custom card widget for displaying messages from a user."""
 
     user_audio_path = StringProperty()
-    user_audio_transcript = StringProperty()
-    user_audio_transcript_received_at = StringProperty()
-    user_message_sent_at = StringProperty()
+    user_transcript = StringProperty()
+    user_transcript_received_at = StringProperty(allownone=True)
+    user_message_sent_at = StringProperty(allownone=True)
 
     def __init__(self, message, **kwargs):
         super().__init__(**kwargs)
-        self.user_audio_path = message.get_audio_path()
-        self.user_audio_transcript = message.audio_transcript
-        self.user_audio_transcript_received_at = message.transcript_received_at
+        self.user_audio_path = message.audio_path
+        self.user_transcript = message.transcript
+        self.user_transcript_received_at = message.transcript_received_at
         self.user_message_sent_at = message.sent_at

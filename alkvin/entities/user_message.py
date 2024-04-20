@@ -23,5 +23,6 @@ class UserMessage(BaseModel):
 
     sent_at = DateTimeField(null=True)
 
-    def get_audio_path(self):
-        return os.path.join(CHATS_AUDIO_DIR, str(self.chat.id), self.audio_file)
+    @property
+    def audio_path(self):
+        return os.path.join(self.chat.audio_dir, self.audio_file)
