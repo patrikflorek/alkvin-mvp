@@ -106,8 +106,15 @@ Builder.load_string(
                         on_release: root.scroll_to_bottom()
                 
                 MDBoxLayout:
-                    id: chat_screen_messages_container
+                    id: chat_screen_sent_messages_container
                     
+                    orientation: "vertical"
+                    spacing: "28dp"
+                    adaptive_height: True
+
+                MDBoxLayout:
+                    id: chat_screen_unsent_messages_container
+
                     orientation: "vertical"
                     padding: 0, 0, 0, "64dp"
                     spacing: "28dp"
@@ -168,9 +175,10 @@ class ChatScreen(MDScreen):
 
         user_message_widget = UserMessageCard(user_message)
 
-        self.ids.chat_screen_messages_container.add_widget(user_message_widget)
+        self.ids.chat_screen_unsent_messages_container.add_widget(user_message_widget)
 
     def on_select_user_callback(self, user_id):
+        print("Selected user:", user_id)
         self.chat.user = User.get_by_id(user_id)
         self.chat.save()
 
@@ -181,12 +189,6 @@ class ChatScreen(MDScreen):
         self.chat.bot = Bot.get(Bot.id == bot_id)
         self.chat.save()
 
-    def create_message_widget(message):
-        if isinstance(message, UserMessage):
-            return UserMessageCard(message)
-        elif isinstance(message, AssistantMessage):
-            return AssistantMessageCard(message)
-
     def select_user(self):
         self.select_user_dialog.update_items(
             [
@@ -195,7 +197,8 @@ class ChatScreen(MDScreen):
             ]
         )
 
-        self.select_user_dialog.open()
+        print(">>>>", self.chat.user_id)
+        self.select_user_dialog.open(self.chat.user_id)
 
     def select_bot(self):
         self.select_bot_dialog.update_items(
@@ -207,19 +210,32 @@ class ChatScreen(MDScreen):
 
         self.select_bot_dialog.open()
 
+    def move_to_sent_messages(self, message_widget, user_message_sent):
+        if user_message_sent:
+            self.ids.chat_screen_unsent_messages_container.remove_widget(message_widget)
+            self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
+
     def on_pre_enter(self):
         self.chat = Chat.get_by_id(self.chat_id)
 
         self.chat_title = self.chat.title
         self.chat_summary = self.chat.summary
 
-        self.ids.chat_screen_messages_container.clear_widgets()
+        self.ids.chat_screen_sent_messages_container.clear_widgets()
+        self.ids.chat_screen_unsent_messages_container.clear_widgets()
+
         for message in self.chat.messages:
             if isinstance(message, UserMessage):
                 message_widget = UserMessageCard(message)
+                message_widget.bind(user_message_sent=self.move_to_sent_messages)
+                if message.sent_at is None:
+                    self.ids.chat_screen_unsent_messages_container.add_widget(
+                        message_widget
+                    )
+                    continue
             elif isinstance(message, AssistantMessage):
                 message_widget = AssistantMessageCard(message)
-            self.ids.chat_screen_messages_container.add_widget(message_widget)
+            self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
 
         if self.chat.user is None:
             self.select_user()

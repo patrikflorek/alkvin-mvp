@@ -38,3 +38,7 @@ class Bot(BaseModel):
     def get_taken_names(self):
         """Get taken bot names."""
         return [bot.name for bot in Bot.select().where(Bot.name != self.name)]
+
+    def complete_chat(self, messages_to_complete, on_completion_callback):
+        completion = "This is a completion."
+        on_completion_callback(completion)

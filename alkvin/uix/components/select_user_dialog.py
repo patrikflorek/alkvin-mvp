@@ -80,6 +80,7 @@ class SelectUserDialog(MDDialog):
         self.app = MDApp.get_running_app()
 
     def open(self, chat_user_id=None):
+        print("SelectUserDialog.open()", chat_user_id)
         if User.select().count() == 0:
             User.create(name="Dummy User")
 

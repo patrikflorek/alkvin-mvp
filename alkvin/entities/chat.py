@@ -47,6 +47,33 @@ class Chat(BaseModel):
         )
         return cls.create(title=new_chat_title, summary=new_chat_summary)
 
+    def on_completion(self, completion):
+        print("Chat.on_completion", completion)
+        from .assistant_message import AssistantMessage
+
+        AssistantMessage.create(chat=self, completion=completion)
+
+    def complete(self):
+        messages_to_complete = [
+            {"role": "system", "content": self.bot.generation_prompt}
+        ]
+        if self.user.introduction:
+            messages_to_complete.append(
+                {"role": "user", "content": self.user.introduction}
+            )
+
+        for message in self.messages:
+            if hasattr(message, "transcript") and message.sent_at is not None:
+                messages_to_complete.append(
+                    {"role": "user", "content": message.transcript}
+                )
+            elif hasattr(message, "completion"):
+                messages_to_complete.append(
+                    {"role": "assistant", "content": message.completion}
+                )
+
+        self.bot.complete_chat(messages_to_complete, self.on_completion)
+
     def delete_instance(self, *args, **kwargs):
         for user_message in self.user_messages:
             user_message.delete_instance()

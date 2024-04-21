@@ -10,7 +10,7 @@ Example usage:
 """
 
 from kivy.lang import Builder
-from kivy.properties import StringProperty
+from kivy.properties import BooleanProperty, ObjectProperty, StringProperty
 
 from kivymd.uix.card import MDCard
 
@@ -24,8 +24,8 @@ Builder.load_string(
     orientation: "horizontal"
     md_bg_color: app.theme_cls.accent_light
     radius: "25dp", "25dp", "25dp", 0
-    elevation: 1 if self.user_message_sent_at else 0
-    opacity: 1 if self.user_message_sent_at else 0.8
+    elevation: 1 if self.user_message_sent else 0
+    opacity: 1 if self.user_message_sent else 0.8
     adaptive_height: True
 
     MDBoxLayout:
@@ -40,9 +40,9 @@ Builder.load_string(
 
         MDBoxLayout:
             size_hint_y: None
-            height: 0 if root.user_transcript_received_at else self.minimum_height
-            opacity: 0 if root.user_transcript_received_at else 1
-            disabled: root.user_transcript_received_at
+            height: 0 if root.user_transcript else self.minimum_height
+            opacity: 0 if root.user_transcript else 1
+            disabled: bool(root.user_transcript)
             
             MDIconButton:
                 icon: "typewriter"
@@ -52,8 +52,8 @@ Builder.load_string(
 
         MDBoxLayout:
             size_hint_y: None
-            height: self.minimum_height if root.user_transcript_received_at else 0
-            opacity: 1 if root.user_transcript_received_at else 0
+            height: self.minimum_height if root.user_transcript else 0
+            opacity: 1 if root.user_transcript else 0
             
             MDLabel:
                 text: root.user_transcript
@@ -61,9 +61,9 @@ Builder.load_string(
     
     MDRelativeLayout:
         size_hint_x: None
-        width: 0 if root.user_message_sent_at else "48dp"
-        disabled: root.user_message_sent_at
-        opacity: 0 if root.user_message_sent_at else 1
+        width: 0 if root.user_message_sent else "48dp"
+        disabled: root.user_message_sent
+        opacity: float(not root.user_message_sent)
 
         MDAnchorLayout:
             anchor_x: "right"
@@ -85,7 +85,7 @@ Builder.load_string(
                 icon: "send"
                 icon_size: "24dp"
                 
-                on_release: print("Send message")  # TODO: Implement message sending    
+                on_release: root.send_message()    
 """
 )
 
@@ -93,14 +93,21 @@ Builder.load_string(
 class UserMessageCard(MDCard):
     """Custom card widget for displaying messages from a user."""
 
+    message = ObjectProperty()
+
     user_audio_path = StringProperty()
     user_transcript = StringProperty()
-    user_transcript_received_at = StringProperty(allownone=True)
-    user_message_sent_at = StringProperty(allownone=True)
+
+    user_message_sent = BooleanProperty()
 
     def __init__(self, message, **kwargs):
         super().__init__(**kwargs)
+        self.message = message
+
         self.user_audio_path = message.audio_path
         self.user_transcript = message.transcript
-        self.user_transcript_received_at = message.transcript_received_at
-        self.user_message_sent_at = message.sent_at
+        self.user_message_sent = message.sent_at is not None
+
+    def send_message(self):
+        self.message.send_to_chat()
+        self.user_message_sent = True
