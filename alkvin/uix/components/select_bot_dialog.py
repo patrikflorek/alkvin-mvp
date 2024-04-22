@@ -20,6 +20,7 @@ from alkvin.entities.bot import Bot
 Builder.load_string(
     """
 <SelectBotListItem>:
+    preselected: False
     divider: None
     text: root.bot_name
 
@@ -30,7 +31,7 @@ Builder.load_string(
             id: bot_select_checkbox
             group: "bots"
             
-            on_release: self.active = True
+            on_release: self.preselected = self.active
 
     IconRightWidget:
         icon: "pencil"
@@ -93,6 +94,7 @@ class SelectBotDialog(MDDialog):
             if bot.id == self.selected_bot_id:
                 bot_list_item.ids.bot_select_checkbox.active = True
 
+            bot_list_item.bind(preselected=self.preselect_bot)
             bot_list_item.bind(editing_bot=self.edit_bot)
             bot_list_items.append(bot_list_item)
 
@@ -107,6 +109,10 @@ class SelectBotDialog(MDDialog):
         self.dismiss()
 
         self.app.root.switch_screen("bot_create_screen", new_bot)
+
+    def preselect_bot(self, bot_list_item, value):
+        if value:
+            self.selected_bot_id = bot_list_item.bot_id
 
     def edit_bot(self, bot_list_item, value):
         self.on_select_bot_callback(bot_list_item.bot_id)

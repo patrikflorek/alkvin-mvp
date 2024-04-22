@@ -20,6 +20,7 @@ from alkvin.entities.user import User
 Builder.load_string(
     """
 <SelectUserListItem>:
+    preselected: False
     divider: None
     text: root.user_name
     
@@ -30,7 +31,7 @@ Builder.load_string(
             id: user_select_checkbox
             group: "users"
             
-            on_release: root.active = True
+            on_release: root.preselected = self.active
 
     IconRightWidget:
         icon: "pencil"
@@ -45,6 +46,7 @@ Builder.load_string(
 class SelectUserListItem(OneLineAvatarIconListItem):
     """Custom list item widget for selecting a chat user."""
 
+    preselected = BooleanProperty(False)
     editing_user = BooleanProperty(False)
 
     user_id = NumericProperty()
@@ -80,7 +82,6 @@ class SelectUserDialog(MDDialog):
         self.app = MDApp.get_running_app()
 
     def open(self, chat_user_id=None):
-        print("SelectUserDialog.open()", chat_user_id)
         if User.select().count() == 0:
             User.create(name="Dummy User")
 
@@ -89,13 +90,13 @@ class SelectUserDialog(MDDialog):
         self.selected_user_id = (
             chat_user_id if chat_user_id in user_ids else user_ids[0]
         )
-
         user_list_items = []
         for user in users:
             user_list_item = SelectUserListItem(user_id=user.id, user_name=user.name)
             if user.id == self.selected_user_id:
                 user_list_item.ids.user_select_checkbox.active = True
 
+            user_list_item.bind(preselected=self.preselect_user)
             user_list_item.bind(editing_user=self.edit_user)
             user_list_items.append(user_list_item)
 
@@ -110,6 +111,10 @@ class SelectUserDialog(MDDialog):
         self.dismiss()
 
         self.app.root.switch_screen("user_create_screen", new_user.id)
+
+    def preselect_user(self, user_list_item, value):
+        if value:
+            self.selected_user_id = user_list_item.user_id
 
     def edit_user(self, user_list_item, value):
         self.on_select_user_callback(user_list_item.user_id)

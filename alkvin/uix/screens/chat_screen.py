@@ -57,8 +57,8 @@ Builder.load_string(
             right_action_items: 
                 [
                 ["file-document", lambda x: root.summarize_chat(), "Summarize", "Summarize"],
-                ["account", lambda x: root.select_user(), "User", "User"],
-                ["robot", lambda x: root.select_bot(), "Bot", "Bot"],
+                ["account", lambda x: root.select_user_dialog.open(root.chat.user_id), "User", "User"],
+                ["robot", lambda x: root.select_bot_dialog.open(root.chat.bot_id), "Bot", "Bot"],
                 ["delete", lambda x: root.delete_chat_dialog.open(), "Delete", "Delete"]
                 ]
         
@@ -178,7 +178,7 @@ class ChatScreen(MDScreen):
         self.ids.chat_screen_unsent_messages_container.add_widget(user_message_widget)
 
     def on_select_user_callback(self, user_id):
-        print("Selected user:", user_id)
+        print("!!!on_select_user_callback: Selected user:", user_id)
         self.chat.user = User.get_by_id(user_id)
         self.chat.save()
 
@@ -188,27 +188,6 @@ class ChatScreen(MDScreen):
     def on_select_bot_callback(self, bot_id):
         self.chat.bot = Bot.get(Bot.id == bot_id)
         self.chat.save()
-
-    def select_user(self):
-        self.select_user_dialog.update_items(
-            [
-                {"user_id": user.id, "user_name": user.name}
-                for user in User.select(User.id, User.name)
-            ]
-        )
-
-        print(">>>>", self.chat.user_id)
-        self.select_user_dialog.open(self.chat.user_id)
-
-    def select_bot(self):
-        self.select_bot_dialog.update_items(
-            [
-                {"bot_id": bot.id, "bot_name": bot.name}
-                for bot in Bot.select(Bot.id, Bot.name)
-            ]
-        )
-
-        self.select_bot_dialog.open()
 
     def move_to_sent_messages(self, message_widget, user_message_sent):
         if user_message_sent:
@@ -238,9 +217,10 @@ class ChatScreen(MDScreen):
             self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
 
         if self.chat.user is None:
-            self.select_user()
+            self.select_user_dialog.open(self.chat.user_id)
+            # if both and user and bot are not selected, the select bot dialog will be opened after the the user is selected
         elif self.chat.bot is None:
-            self.select_bot()
+            self.select_bot_dialog.open(self.chat.bot_id)
 
     def scroll_to_bottom(self):
         # If the chat is longer than the screen, scroll to the bottom
