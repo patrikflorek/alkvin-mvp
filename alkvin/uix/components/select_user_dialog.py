@@ -31,7 +31,7 @@ Builder.load_string(
             id: user_select_checkbox
             group: "users"
             
-            on_release: root.preselected = self.active
+            on_active: root.preselected = self.active
 
     IconRightWidget:
         icon: "pencil"
@@ -90,6 +90,7 @@ class SelectUserDialog(MDDialog):
         self.selected_user_id = (
             chat_user_id if chat_user_id in user_ids else user_ids[0]
         )
+
         user_list_items = []
         for user in users:
             user_list_item = SelectUserListItem(user_id=user.id, user_name=user.name)

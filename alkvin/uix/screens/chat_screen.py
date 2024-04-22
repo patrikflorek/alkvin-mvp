@@ -183,7 +183,7 @@ class ChatScreen(MDScreen):
         self.chat.save()
 
         if self.chat.bot is None:
-            self.select_bot()
+            self.select_bot_dialog.open(self.chat.bot_id)
 
     def on_select_bot_callback(self, bot_id):
         self.chat.bot = Bot.get(Bot.id == bot_id)

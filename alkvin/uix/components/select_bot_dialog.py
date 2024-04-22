@@ -31,7 +31,7 @@ Builder.load_string(
             id: bot_select_checkbox
             group: "bots"
             
-            on_release: self.preselected = self.active
+            on_active: root.preselected = self.active
 
     IconRightWidget:
         icon: "pencil"
@@ -108,7 +108,7 @@ class SelectBotDialog(MDDialog):
 
         self.dismiss()
 
-        self.app.root.switch_screen("bot_create_screen", new_bot)
+        self.app.root.switch_screen("bot_create_screen", new_bot.id)
 
     def preselect_bot(self, bot_list_item, value):
         if value:
