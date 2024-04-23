@@ -71,6 +71,13 @@ Builder.load_string(
                 padding: "40dp"
                 spacing: "40dp"
                 adaptive_height: True
+
+                canvas:
+                    Color:
+                        rgba: 1, 0, 0, .6
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
                 
                 MDCard:
                     orientation: "vertical"
@@ -81,21 +88,20 @@ Builder.load_string(
                     md_bg_color: "#efefef"
                     elevation: 0.5
 
-                    MDLabel:
+                    MDTextField:
+                        hint_text: "Title"
+                        helper_text_mode: "on_focus"
+                        required: True
                         text: root.chat_title
-                        font_style: "H6"
-                        theme_text_color: "Primary"
-                        adaptive_height: True
+                        on_text: root.chat_title = self.text
 
-                    MDSeparator:
-                        height: "1dp"
-                
-                    MDLabel:
-                        text: root.chat_summary if root.chat_summary else "Press summarize button to generate a title and summary."
-                        font_style: "Body1" if root.chat_summary else "Subtitle1"
-                        theme_text_color: "Primary" if root.chat_summary else "Secondary"
-                        adaptive_height: True
-
+                    MDTextField:
+                        hint_text: "Summary"
+                        helper_text_mode: "on_focus"
+                        multiline: True
+                        required: True
+                        text: root.chat_summary
+                        on_text: root.chat_summary = self.text
 
                     MDIconButton:
                         icon: "chevron-down"
@@ -112,6 +118,13 @@ Builder.load_string(
                     spacing: "28dp"
                     adaptive_height: True
 
+                    canvas:
+                        Color:
+                            rgba: 0, 1, 0, .6
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+
                 MDBoxLayout:
                     id: chat_screen_unsent_messages_container
 
@@ -119,6 +132,13 @@ Builder.load_string(
                     padding: 0, 0, 0, "64dp"
                     spacing: "28dp"
                     adaptive_height: True
+
+                    canvas:
+                        Color:
+                            rgba: 0, 0, 1, .6
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
                 
     AudioRecorderBox:
         id: chat_screen_audio_recorder
@@ -178,7 +198,6 @@ class ChatScreen(MDScreen):
         self.ids.chat_screen_unsent_messages_container.add_widget(user_message_widget)
 
     def on_select_user_callback(self, user_id):
-        print("!!!on_select_user_callback: Selected user:", user_id)
         self.chat.user = User.get_by_id(user_id)
         self.chat.save()
 
@@ -221,6 +240,47 @@ class ChatScreen(MDScreen):
             # if both and user and bot are not selected, the select bot dialog will be opened after the the user is selected
         elif self.chat.bot is None:
             self.select_bot_dialog.open(self.chat.bot_id)
+
+    def save_bot(self):
+        if self.chat_title == "":
+            raise ValueError("Chat title cannot be empty")
+
+        self.chat_title = (
+            self.chat_title.strip()
+        )  # TODO: Remove leading and trailing whitespace also in the BotScreen and UserScreen
+
+    #     self.bot.name = self.bot_name
+    #     self.bot.language = self.bot_language
+    #     self.bot.generation_prompt = self.bot_generation_prompt
+    #     self.bot.summarization_prompt = self.bot_summarization_prompt
+    #     self.bot.speech_prompt = self.bot_speech_prompt
+    #     self.bot.speech_voice = self.bot_speech_voice
+
+    #     self.bot.save()
+
+    # def has_valid_data(self):
+    #     try:
+    #         self.save_bot()
+    #     except ValueError as e:
+    #         self.invalid_data_error_snackbar.text = str(e)
+    #         self.invalid_data_error_snackbar.open()
+
+    #         return False
+
+    #     return True
+
+    # def switch_back(self):
+    #     if not self.has_valid_data():
+    #         return
+
+    #     self.manager.switch_back()
+
+    def on_pre_leave(self):
+        # self.ids.chat_screen_audio_recorder.stop_recording()
+        print("ChatScreen.on_pre_leave()", self.chat_title, self.chat_summary)
+        self.chat.title = self.chat_title
+        self.chat.summary = self.chat_summary
+        self.chat.save()
 
     def scroll_to_bottom(self):
         # If the chat is longer than the screen, scroll to the bottom
