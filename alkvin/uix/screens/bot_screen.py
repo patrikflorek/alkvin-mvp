@@ -148,6 +148,8 @@ class BotScreen(MDScreen):
         self.taken_bot_names = self.bot.get_taken_names()
 
     def save_bot(self):
+        self.bot_name = self.bot_name.strip()
+
         if self.bot_name == "":
             raise ValueError("Bot name cannot be empty")
 

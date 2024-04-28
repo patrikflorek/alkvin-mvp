@@ -24,8 +24,8 @@ Builder.load_string(
     orientation: "horizontal"
     md_bg_color: app.theme_cls.accent_light
     radius: "25dp", "25dp", "25dp", 0
-    elevation: 1 if self.user_message_sent else 0
-    opacity: 1 if self.user_message_sent else 0.8
+    elevation: 1 if self.is_message_sent else 0
+    opacity: 1 if self.is_message_sent else 0.8
     adaptive_height: True
 
     MDBoxLayout:
@@ -61,9 +61,9 @@ Builder.load_string(
     
     MDRelativeLayout:
         size_hint_x: None
-        width: 0 if root.user_message_sent else "48dp"
-        disabled: root.user_message_sent
-        opacity: float(not root.user_message_sent)
+        width: 0 if root.is_message_sent else "48dp"
+        disabled: root.is_message_sent
+        opacity: 0. if root.is_message_sent else 1.
 
         MDAnchorLayout:
             anchor_x: "right"
@@ -98,7 +98,7 @@ class UserMessageCard(MDCard):
     user_audio_path = StringProperty()
     user_transcript = StringProperty()
 
-    user_message_sent = BooleanProperty()
+    is_message_sent = BooleanProperty()
 
     def __init__(self, message, **kwargs):
         super().__init__(**kwargs)
@@ -106,8 +106,8 @@ class UserMessageCard(MDCard):
 
         self.user_audio_path = message.audio_path
         self.user_transcript = message.transcript
-        self.user_message_sent = message.sent_at is not None
+        self.is_message_sent = message.sent_at is not None
 
     def send_message(self):
         self.message.send_to_chat()
-        self.user_message_sent = True
+        self.is_message_sent = True

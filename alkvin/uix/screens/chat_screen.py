@@ -52,7 +52,7 @@ Builder.load_string(
             use_overflow: True
             left_action_items: 
                 [
-                ["arrow-left", lambda x: app.root.switch_back(), "Back", "Back"]
+                ["arrow-left", lambda x: root.switch_back(), "Back", "Back"]
                 ]
             right_action_items: 
                 [
@@ -71,13 +71,6 @@ Builder.load_string(
                 padding: "40dp"
                 spacing: "40dp"
                 adaptive_height: True
-
-                canvas:
-                    Color:
-                        rgba: 1, 0, 0, .6
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
                 
                 MDCard:
                     orientation: "vertical"
@@ -118,13 +111,6 @@ Builder.load_string(
                     spacing: "28dp"
                     adaptive_height: True
 
-                    canvas:
-                        Color:
-                            rgba: 0, 1, 0, .6
-                        Rectangle:
-                            pos: self.pos
-                            size: self.size
-
                 MDBoxLayout:
                     id: chat_screen_unsent_messages_container
 
@@ -132,13 +118,6 @@ Builder.load_string(
                     padding: 0, 0, 0, "64dp"
                     spacing: "28dp"
                     adaptive_height: True
-
-                    canvas:
-                        Color:
-                            rgba: 0, 0, 1, .6
-                        Rectangle:
-                            pos: self.pos
-                            size: self.size
                 
     AudioRecorderBox:
         id: chat_screen_audio_recorder
@@ -208,8 +187,8 @@ class ChatScreen(MDScreen):
         self.chat.bot = Bot.get(Bot.id == bot_id)
         self.chat.save()
 
-    def move_to_sent_messages(self, message_widget, user_message_sent):
-        if user_message_sent:
+    def move_to_sent_messages_container(self, message_widget, is_message_sent):
+        if is_message_sent:
             self.ids.chat_screen_unsent_messages_container.remove_widget(message_widget)
             self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
 
@@ -225,7 +204,9 @@ class ChatScreen(MDScreen):
         for message in self.chat.messages:
             if isinstance(message, UserMessage):
                 message_widget = UserMessageCard(message)
-                message_widget.bind(user_message_sent=self.move_to_sent_messages)
+                message_widget.bind(
+                    is_message_sent=self.move_to_sent_messages_container
+                )
                 if message.sent_at is None:
                     self.ids.chat_screen_unsent_messages_container.add_widget(
                         message_widget
@@ -233,6 +214,7 @@ class ChatScreen(MDScreen):
                     continue
             elif isinstance(message, AssistantMessage):
                 message_widget = AssistantMessageCard(message)
+
             self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
 
         if self.chat.user is None:
@@ -240,47 +222,40 @@ class ChatScreen(MDScreen):
             # if both and user and bot are not selected, the select bot dialog will be opened after the the user is selected
         elif self.chat.bot is None:
             self.select_bot_dialog.open(self.chat.bot_id)
+        elif self.ids.chat_screen_sent_messages_container.children:
+            # If both user and bot are selected and if the last message in the sent messages is a user message, then request a response from the bot
+            last_sent_message = self.ids.chat_screen_sent_messages_container.children[0]
+            if isinstance(last_sent_message, UserMessageCard):
+                print("Requesting bot response")
+                # self.request_bot_response()
 
-    def save_bot(self):
+    def save_chat(self):
+        self.chat_title = self.chat_title.strip()
+
         if self.chat_title == "":
             raise ValueError("Chat title cannot be empty")
 
-        self.chat_title = (
-            self.chat_title.strip()
-        )  # TODO: Remove leading and trailing whitespace also in the BotScreen and UserScreen
-
-    #     self.bot.name = self.bot_name
-    #     self.bot.language = self.bot_language
-    #     self.bot.generation_prompt = self.bot_generation_prompt
-    #     self.bot.summarization_prompt = self.bot_summarization_prompt
-    #     self.bot.speech_prompt = self.bot_speech_prompt
-    #     self.bot.speech_voice = self.bot_speech_voice
-
-    #     self.bot.save()
-
-    # def has_valid_data(self):
-    #     try:
-    #         self.save_bot()
-    #     except ValueError as e:
-    #         self.invalid_data_error_snackbar.text = str(e)
-    #         self.invalid_data_error_snackbar.open()
-
-    #         return False
-
-    #     return True
-
-    # def switch_back(self):
-    #     if not self.has_valid_data():
-    #         return
-
-    #     self.manager.switch_back()
-
-    def on_pre_leave(self):
-        # self.ids.chat_screen_audio_recorder.stop_recording()
-        print("ChatScreen.on_pre_leave()", self.chat_title, self.chat_summary)
         self.chat.title = self.chat_title
         self.chat.summary = self.chat_summary
+
         self.chat.save()
+
+    def has_valid_data(self):
+        try:
+            self.save_chat()
+        except ValueError as e:
+            self.invalid_data_error_snackbar.text = str(e)
+            self.invalid_data_error_snackbar.open()
+
+            return False
+
+        return True
+
+    def switch_back(self):
+        if not self.has_valid_data():
+            return
+
+        self.manager.switch_back()
 
     def scroll_to_bottom(self):
         # If the chat is longer than the screen, scroll to the bottom

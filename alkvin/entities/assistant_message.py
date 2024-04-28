@@ -21,6 +21,9 @@ class AssistantMessage(BaseModel):
 
     @property
     def speech_path(self):
+        if self.speech_file is None:
+            return None
+
         return os.path.join(self.chat.audio_dir, self.speech_file)
 
     @classmethod

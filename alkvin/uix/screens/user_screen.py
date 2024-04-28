@@ -93,6 +93,8 @@ class UserScreen(MDScreen):
         self.taken_user_names = self.user.get_taken_names()
 
     def save_user(self):
+        self.user_name = self.user_name.strip()
+
         if self.user_name == "":
             raise ValueError("User name cannot be empty")
 

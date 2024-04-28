@@ -24,9 +24,28 @@ class Chat(BaseModel):
 
     @property
     def messages(self):
+        def messages_sorting_key(message):
+            from .user_message import UserMessage
+            from .assistant_message import AssistantMessage
+
+            is_sent_message = (
+                isinstance(message, UserMessage) and message.sent_at is not None
+            ) or isinstance(message, AssistantMessage)
+
+            if isinstance(message, UserMessage):
+                sorting_time = (
+                    message.sent_at
+                    if message.sent_at is not None
+                    else message.audio_created_at
+                )
+            elif isinstance(message, AssistantMessage):
+                sorting_time = message.completion_received_at
+
+            return (is_sent_message, sorting_time)
+
         return sorted(
             list(self.user_messages) + list(self.assistant_messages),
-            key=lambda message: message.created_at,
+            key=messages_sorting_key,
         )
 
     @property
@@ -48,7 +67,6 @@ class Chat(BaseModel):
         return cls.create(title=new_chat_title, summary=new_chat_summary)
 
     def on_completion(self, completion):
-        print("Chat.on_completion", completion)
         from .assistant_message import AssistantMessage
 
         AssistantMessage.create(chat=self, completion=completion)
