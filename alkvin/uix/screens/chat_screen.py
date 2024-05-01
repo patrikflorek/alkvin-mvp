@@ -13,9 +13,11 @@ import os
 import shutil
 from datetime import datetime
 
+from kivy.clock import Clock
+
+from kivy.animation import Animation
 from kivy.lang import Builder
 from kivy.properties import (
-    ListProperty,
     NumericProperty,
     ObjectProperty,
     StringProperty,
@@ -139,9 +141,9 @@ class ChatScreen(MDScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.select_user_dialog = SelectUserDialog(self.on_select_user_callback)
+        self.select_user_dialog = SelectUserDialog(self.on_user_selected)
 
-        self.select_bot_dialog = SelectBotDialog(self.on_select_bot_callback)
+        self.select_bot_dialog = SelectBotDialog(self.on_bot_selected)
 
         self.delete_chat_dialog = MDDialog(
             title="Delete chat",
@@ -172,41 +174,50 @@ class ChatScreen(MDScreen):
             chat=self.chat, audio_file=new_audio_file_name
         )
 
-        user_message_widget = UserMessageCard(user_message)
+        user_message_widget = UserMessageCard(user_message, self.on_user_message_sent)
 
         self.ids.chat_screen_unsent_messages_container.add_widget(user_message_widget)
 
-    def on_select_user_callback(self, user_id):
+    def on_user_selected(self, user_id):
         self.chat.user = User.get_by_id(user_id)
         self.chat.save()
 
         if self.chat.bot is None:
             self.select_bot_dialog.open(self.chat.bot_id)
+        elif self.ids.chat_screen_sent_messages_container.children:
+            last_sent_message = self.ids.chat_screen_sent_messages_container.children[0]
+            if isinstance(last_sent_message, UserMessageCard):
+                self.chat.bot.chat_complete(self.chat, self.on_chat_completed)
 
-    def on_select_bot_callback(self, bot_id):
+    def on_bot_selected(self, bot_id):
         self.chat.bot = Bot.get(Bot.id == bot_id)
         self.chat.save()
 
-    def move_to_sent_messages_container(self, message_widget, is_message_sent):
-        if is_message_sent:
-            self.ids.chat_screen_unsent_messages_container.remove_widget(message_widget)
-            self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
+        if self.ids.chat_screen_sent_messages_container.children:
+            last_sent_message = self.ids.chat_screen_sent_messages_container.children[0]
+            if isinstance(last_sent_message, UserMessageCard):
+                self.chat.bot.chat_complete(self.chat, self.on_chat_completed)
 
-    def on_pre_enter(self):
-        self.chat = Chat.get_by_id(self.chat_id)
+    def on_chat_completed(self, completion):
+        message = AssistantMessage.create(chat=self.chat, completion=completion)
+        self.ids.chat_screen_sent_messages_container.add_widget(
+            AssistantMessageCard(message)
+        )
 
-        self.chat_title = self.chat.title
-        self.chat_summary = self.chat.summary
+    def on_user_message_sent(self, message_widget):
+        self.ids.chat_screen_unsent_messages_container.remove_widget(message_widget)
+        self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
 
+        self.chat.bot.chat_complete(self.chat, self.on_chat_completed)
+
+    def load_chat_messages(self):
         self.ids.chat_screen_sent_messages_container.clear_widgets()
         self.ids.chat_screen_unsent_messages_container.clear_widgets()
 
         for message in self.chat.messages:
             if isinstance(message, UserMessage):
-                message_widget = UserMessageCard(message)
-                message_widget.bind(
-                    is_message_sent=self.move_to_sent_messages_container
-                )
+                message_widget = UserMessageCard(message, self.on_user_message_sent)
+
                 if message.sent_at is None:
                     self.ids.chat_screen_unsent_messages_container.add_widget(
                         message_widget
@@ -217,6 +228,16 @@ class ChatScreen(MDScreen):
 
             self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
 
+        self.ids.chat_screen_scroll.scroll_y = 1
+
+    def on_pre_enter(self):
+        self.chat = Chat.get_by_id(self.chat_id)
+
+        self.chat_title = self.chat.title
+        self.chat_summary = self.chat.summary
+
+        self.load_chat_messages()
+
         if self.chat.user is None:
             self.select_user_dialog.open(self.chat.user_id)
             # if both and user and bot are not selected, the select bot dialog will be opened after the the user is selected
@@ -226,8 +247,7 @@ class ChatScreen(MDScreen):
             # If both user and bot are selected and if the last message in the sent messages is a user message, then request a response from the bot
             last_sent_message = self.ids.chat_screen_sent_messages_container.children[0]
             if isinstance(last_sent_message, UserMessageCard):
-                print("Requesting bot response")
-                # self.request_bot_response()
+                self.chat.bot.chat_complete(self.chat, self.on_chat_completed)
 
     def save_chat(self):
         self.chat_title = self.chat_title.strip()
@@ -258,12 +278,16 @@ class ChatScreen(MDScreen):
         self.manager.switch_back()
 
     def scroll_to_bottom(self):
-        # If the chat is longer than the screen, scroll to the bottom
-        if (
-            self.height < self.ids.chat_screen_message_container.height
-            and self.ids.chat_screen_scroll.scroll_y != 0
-        ):
-            self.ids.chat_screen_scroll.scroll_y = 0
+        if self.height >= self.ids.chat_screen_message_container.height:
+            return
+
+        anim = Animation(
+            scroll_y=self.ids.chat_screen_message_container.y
+            / self.ids.chat_screen_message_container.height,
+            d=0.5,
+            t="out_quad",
+        )
+        anim.start(self.ids.chat_screen_scroll)
 
     def summarize_chat(self):
         print("Summarizing chat")  # TODO: Implement chat summarization

@@ -52,6 +52,24 @@ class Chat(BaseModel):
     def audio_dir(self):
         return os.path.join(CHATS_AUDIO_DIR, str(self.id))
 
+    @property
+    def messages_to_complete(self):
+        from .user_message import UserMessage
+        from .assistant_message import AssistantMessage
+
+        messages = [{"role": "system", "content": self.bot.generation_prompt}]
+
+        if self.user.introduction:
+            messages.append({"role": "user", "content": self.user.introduction})
+
+        for message in self.messages:
+            if isinstance(message, UserMessage) and message.sent_at is not None:
+                messages.append({"role": "user", "content": message.transcript})
+            elif isinstance(message, AssistantMessage):
+                messages.append({"role": "assistant", "content": message.completion})
+
+        return messages
+
     @classmethod
     def create(cls, *args, **kwargs):
         chat = super().create(*args, **kwargs)
@@ -65,32 +83,6 @@ class Chat(BaseModel):
             "Press the summarization button to get the chat title and summary."
         )
         return cls.create(title=new_chat_title, summary=new_chat_summary)
-
-    def on_completion(self, completion):
-        from .assistant_message import AssistantMessage
-
-        AssistantMessage.create(chat=self, completion=completion)
-
-    def complete(self):
-        messages_to_complete = [
-            {"role": "system", "content": self.bot.generation_prompt}
-        ]
-        if self.user.introduction:
-            messages_to_complete.append(
-                {"role": "user", "content": self.user.introduction}
-            )
-
-        for message in self.messages:
-            if hasattr(message, "transcript") and message.sent_at is not None:
-                messages_to_complete.append(
-                    {"role": "user", "content": message.transcript}
-                )
-            elif hasattr(message, "completion"):
-                messages_to_complete.append(
-                    {"role": "assistant", "content": message.completion}
-                )
-
-        self.bot.complete_chat(messages_to_complete, self.on_completion)
 
     def delete_instance(self, *args, **kwargs):
         for user_message in self.user_messages:

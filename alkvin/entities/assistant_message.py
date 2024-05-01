@@ -28,4 +28,4 @@ class AssistantMessage(BaseModel):
 
     @classmethod
     def create(cls, *args, **kwargs):
-        super().create(*args, completion_received_at=datetime.now(), **kwargs)
+        return super().create(*args, completion_received_at=datetime.now(), **kwargs)

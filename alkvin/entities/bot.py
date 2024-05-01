@@ -39,6 +39,18 @@ class Bot(BaseModel):
         """Get taken bot names."""
         return [bot.name for bot in Bot.select().where(Bot.name != self.name)]
 
-    def complete_chat(self, messages_to_complete, on_completion_callback):
-        completion = "This is a completion."
+    def chat_complete(self, chat, on_completion_callback):
+        messages = chat.messages_to_complete
+
+        from random import choice
+
+        completion = choice(
+            [
+                "This is a completion.",
+                "This is another completion.",
+                "This is yet another completion.",
+                "This is the final completion.",
+            ]
+        )
+
         on_completion_callback(completion)

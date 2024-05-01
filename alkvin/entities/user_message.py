@@ -6,7 +6,6 @@ from peewee import CharField, DateTimeField, ForeignKeyField
 from alkvin.db import BaseModel
 
 from alkvin.entities.chat import Chat
-from alkvin.entities.assistant_message import AssistantMessage
 
 
 class UserMessage(BaseModel):
@@ -25,9 +24,3 @@ class UserMessage(BaseModel):
     @property
     def audio_path(self):
         return os.path.join(self.chat.audio_dir, self.audio_file)
-
-    def send_to_chat(self):
-        self.sent_at = datetime.now()
-        self.save()
-
-        self.chat.complete()

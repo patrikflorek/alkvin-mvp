@@ -9,6 +9,8 @@ Example usage:
     card = UserMessageCard(message: UserMessage)
 """
 
+from datetime import datetime
+
 from kivy.lang import Builder
 from kivy.properties import BooleanProperty, ObjectProperty, StringProperty
 
@@ -98,16 +100,25 @@ class UserMessageCard(MDCard):
     user_audio_path = StringProperty()
     user_transcript = StringProperty()
 
-    is_message_sent = BooleanProperty()
+    is_message_sent = BooleanProperty(False)
 
-    def __init__(self, message, **kwargs):
+    on_message_sent_callback = None
+
+    def __init__(self, message, on_message_sent_callback, **kwargs):
         super().__init__(**kwargs)
         self.message = message
+        self.on_message_sent_callback = on_message_sent_callback
 
         self.user_audio_path = message.audio_path
         self.user_transcript = message.transcript
+
         self.is_message_sent = message.sent_at is not None
 
     def send_message(self):
-        self.message.send_to_chat()
+        self.message.sent_at = datetime.now()
+        self.message.save()
+
         self.is_message_sent = True
+
+        if self.on_message_sent_callback is not None:
+            self.on_message_sent_callback(self)

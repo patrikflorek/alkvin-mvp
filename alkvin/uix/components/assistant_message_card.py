@@ -27,7 +27,6 @@ Builder.load_string(
     md_bg_color: app.theme_cls.primary_light
     radius: "25dp", 0, "25dp", "25dp"
     elevation: 1
-    # opacity: 1
     adaptive_height: True
 
     MDLabel:
