@@ -10,7 +10,7 @@ Example usage:
 """
 
 from kivy.lang import Builder
-from kivy.properties import StringProperty
+from kivy.properties import ObjectProperty, StringProperty
 
 from kivymd.uix.card import MDCard
 
@@ -60,10 +60,15 @@ Builder.load_string(
 class AssistantMessageCard(MDCard):
     """Custom card widget for displaying messages from an AI assistant."""
 
+    message = ObjectProperty()
+
     assistant_completion = StringProperty()
     assistant_speech_path = StringProperty(allownone=True)
 
     def __init__(self, message, **kwargs):
         super().__init__(**kwargs)
+        self.message = message
+
+    def on_message(self, instance, message):
         self.assistant_completion = message.completion
         self.assistant_speech_path = message.speech_path

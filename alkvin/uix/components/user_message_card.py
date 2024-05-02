@@ -76,7 +76,7 @@ Builder.load_string(
                 icon: "close"
                 icon_size: "18dp"
                 
-                on_release: print("Remove message")  # TODO: Implement message removal
+                on_release: root.remove_widget()
 
         MDAnchorLayout:
             anchor_x: "right"
@@ -102,13 +102,11 @@ class UserMessageCard(MDCard):
 
     is_message_sent = BooleanProperty(False)
 
-    on_message_sent_callback = None
-
-    def __init__(self, message, on_message_sent_callback, **kwargs):
+    def __init__(self, message, **kwargs):
         super().__init__(**kwargs)
         self.message = message
-        self.on_message_sent_callback = on_message_sent_callback
 
+    def on_message(self, instance, message):
         self.user_audio_path = message.audio_path
         self.user_transcript = message.transcript
 
@@ -120,5 +118,11 @@ class UserMessageCard(MDCard):
 
         self.is_message_sent = True
 
-        if self.on_message_sent_callback is not None:
-            self.on_message_sent_callback(self)
+    def remove_widget(self):
+        from alkvin.uix.recycling import get_recycling_bin
+
+        self.parent.remove_widget(self)
+        self.message.delete_instance()
+
+        recycling_bin = get_recycling_bin()
+        recycling_bin.recycle_message_widgets([self])

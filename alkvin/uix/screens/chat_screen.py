@@ -13,8 +13,6 @@ import os
 import shutil
 from datetime import datetime
 
-from kivy.clock import Clock
-
 from kivy.animation import Animation
 from kivy.lang import Builder
 from kivy.properties import (
@@ -30,7 +28,8 @@ from kivymd.uix.screen import MDScreen
 from alkvin.uix.components.select_user_dialog import SelectUserDialog
 from alkvin.uix.components.user_message_card import UserMessageCard
 from alkvin.uix.components.select_bot_dialog import SelectBotDialog
-from alkvin.uix.components.assistant_message_card import AssistantMessageCard
+
+from alkvin.uix.recycling import get_recycling_bin
 
 from alkvin.entities.bot import Bot
 from alkvin.entities.chat import Chat
@@ -140,6 +139,7 @@ class ChatScreen(MDScreen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.recycling_bin = get_recycling_bin()
 
         self.select_user_dialog = SelectUserDialog(self.on_user_selected)
 
@@ -170,13 +170,12 @@ class ChatScreen(MDScreen):
         new_audio_file_path = os.path.join(self.chat.audio_dir, new_audio_file_name)
         shutil.move(audio_recording_path, new_audio_file_path)
 
-        user_message = UserMessage.create(
-            chat=self.chat, audio_file=new_audio_file_name
-        )
+        message = UserMessage.create(chat=self.chat, audio_file=new_audio_file_name)
 
-        user_message_widget = UserMessageCard(user_message, self.on_user_message_sent)
+        message_widget = self.recycling_bin.get_message_widget(message)
+        message_widget.bind(is_message_sent=self.on_user_message_sent)
 
-        self.ids.chat_screen_unsent_messages_container.add_widget(user_message_widget)
+        self.ids.chat_screen_unsent_messages_container.add_widget(message_widget)
 
     def on_user_selected(self, user_id):
         self.chat.user = User.get_by_id(user_id)
@@ -200,23 +199,32 @@ class ChatScreen(MDScreen):
 
     def on_chat_completed(self, completion):
         message = AssistantMessage.create(chat=self.chat, completion=completion)
-        self.ids.chat_screen_sent_messages_container.add_widget(
-            AssistantMessageCard(message)
-        )
+        message_widget = self.recycling_bin.get_message_widget(message)
+        self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
 
-    def on_user_message_sent(self, message_widget):
+    def on_user_message_sent(self, message_widget, is_message_sent):
+        if not is_message_sent:
+            return
+
         self.ids.chat_screen_unsent_messages_container.remove_widget(message_widget)
         self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
 
         self.chat.bot.chat_complete(self.chat, self.on_chat_completed)
 
     def load_chat_messages(self):
+        message_widgets = (
+            self.ids.chat_screen_sent_messages_container.children
+            + self.ids.chat_screen_unsent_messages_container.children
+        )
+        self.recycling_bin.recycle_message_widgets(message_widgets)
+
         self.ids.chat_screen_sent_messages_container.clear_widgets()
         self.ids.chat_screen_unsent_messages_container.clear_widgets()
 
         for message in self.chat.messages:
             if isinstance(message, UserMessage):
-                message_widget = UserMessageCard(message, self.on_user_message_sent)
+                message_widget = self.recycling_bin.get_message_widget(message)
+                message_widget.bind(is_message_sent=self.on_user_message_sent)
 
                 if message.sent_at is None:
                     self.ids.chat_screen_unsent_messages_container.add_widget(
@@ -224,7 +232,7 @@ class ChatScreen(MDScreen):
                     )
                     continue
             elif isinstance(message, AssistantMessage):
-                message_widget = AssistantMessageCard(message)
+                message_widget = self.recycling_bin.get_message_widget(message)
 
             self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
 
