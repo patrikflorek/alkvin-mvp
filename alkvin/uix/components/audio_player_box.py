@@ -52,13 +52,10 @@ class AudioPlayerBox(MDBoxLayout):
     audio_path = StringProperty()
     progress_bar_color = ListProperty([0.2, 0.2, 0.2, 1])
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def toggle_playing(self):
         if self.state == "stopped":
             self.state = "playing"
-            print("Start playing audio")
+            print(f"Start playing audio {self.audio_path}")
         else:
             self.state = "stopped"
-            print("Stop playing audio")
+            print(f"Stop playing audio {self.audio_path}")

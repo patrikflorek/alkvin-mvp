@@ -9,6 +9,8 @@ Example usage:
     card = AssistantMessageCard(message: AssistantMessage)
 """
 
+import os
+
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty, StringProperty
 
@@ -44,7 +46,7 @@ Builder.load_string(
             icon: "account-voice"
             icon_size: "24dp"
 
-            on_release: print("TTS")  # TODO: Implement TTS
+            on_release: root.synthesize_speech()
 
     AudioPlayerBox:
         audio_path: root.assistant_speech_path if root.assistant_speech_path else ""
@@ -61,14 +63,25 @@ class AssistantMessageCard(MDCard):
     """Custom card widget for displaying messages from an AI assistant."""
 
     message = ObjectProperty()
+    chat = ObjectProperty()
 
     assistant_completion = StringProperty()
     assistant_speech_path = StringProperty(allownone=True)
 
-    def __init__(self, message, **kwargs):
+    def __init__(self, message, chat, **kwargs):
         super().__init__(**kwargs)
         self.message = message
+        self.chat = chat
 
     def on_message(self, instance, message):
         self.assistant_completion = message.completion
         self.assistant_speech_path = message.speech_path
+
+    def synthesize_speech(self):
+        speech_file = self.chat.bot.synthesize_speech(self.message.completion)
+        self.assistant_speech_path = os.path.join(self.chat.audio_dir, speech_file)
+
+        # TODO: Move generated speech file to chat audio directory
+
+        self.message.speech_file = speech_file
+        self.message.save()

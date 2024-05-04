@@ -3,8 +3,8 @@ Bot Screen
 ==========
 
 This module defines the BotScreen class which represents the screen
-for creating and editing chat bots. The BotScreen class also allows 
-replication and deletion a viewed chat bot.
+for viewing and editing a chat. The BotScreen class also allows 
+replication and deleting of a viewed chat bot.
 
 The BotScreen class allows to specify the name, speech-to-text language,
 text generation instructions, and text-to-speech settings for a chat bot.
@@ -95,7 +95,7 @@ Builder.load_string(
 
 
 class BotScreen(MDScreen):
-    """Screen for creating, editing, replicating, and deleting chat bots."""
+    """Screen for viewing and editing a chat bot."""
 
     bot = ObjectProperty(allownone=True)
     bot_id = NumericProperty(allownone=True)

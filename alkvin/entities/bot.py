@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import uuid4
 
 from peewee import CharField
@@ -39,6 +40,20 @@ class Bot(BaseModel):
         """Get taken bot names."""
         return [bot.name for bot in Bot.select().where(Bot.name != self.name)]
 
+    def transcribe_audio(self, audio_path):
+        """Transcribe audio."""
+        from random import choice
+
+        transcript = choice(
+            [
+                "This is a transcription.",
+                "This is another transcription.",
+                "This is yet another transcription.",
+                "This is the final transcription.",
+            ]
+        )
+        return transcript
+
     def chat_complete(self, chat, on_completion_callback):
         messages = chat.messages_to_complete
 
@@ -54,3 +69,6 @@ class Bot(BaseModel):
         )
 
         on_completion_callback(completion)
+
+    def synthesize_speech(self, completion):
+        return f"user_{datetime.now().isoformat()}.opus"

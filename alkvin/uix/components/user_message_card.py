@@ -50,7 +50,7 @@ Builder.load_string(
                 icon: "typewriter"
                 icon_size: "24dp"
 
-                on_release: print("STT")  # TODO: Implement STT
+                on_release: root.transcribe_audio()
 
         MDBoxLayout:
             size_hint_y: None
@@ -96,21 +96,29 @@ class UserMessageCard(MDCard):
     """Custom card widget for displaying messages from a user."""
 
     message = ObjectProperty()
+    chat = ObjectProperty()
 
     user_audio_path = StringProperty()
     user_transcript = StringProperty()
 
     is_message_sent = BooleanProperty(False)
 
-    def __init__(self, message, **kwargs):
+    def __init__(self, message, chat, **kwargs):
         super().__init__(**kwargs)
         self.message = message
+        self.chat = chat
 
     def on_message(self, instance, message):
         self.user_audio_path = message.audio_path
         self.user_transcript = message.transcript
 
         self.is_message_sent = message.sent_at is not None
+
+    def transcribe_audio(self):
+        self.message.transcript = self.chat.bot.transcribe_audio(self.user_audio_path)
+        self.message.save()
+
+        self.user_transcript = self.message.transcript
 
     def send_message(self):
         self.message.sent_at = datetime.now()
@@ -119,9 +127,8 @@ class UserMessageCard(MDCard):
         self.is_message_sent = True
 
     def remove_widget(self):
-        from alkvin.uix.recycling import get_recycling_bin
+        from alkvin.uix.tools.recycling import get_recycling_bin
 
-        self.parent.remove_widget(self)
         self.message.delete_instance()
 
         recycling_bin = get_recycling_bin()

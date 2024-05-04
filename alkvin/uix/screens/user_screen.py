@@ -3,8 +3,8 @@ User Screen
 ===========
 
 This module defines the UserScreen class which represents the screen
-for editing virtual users. The UserScreen class also allows to invoke
-"cloning" and deleting the virtual user.
+for viewing and editing a virtual user. The UserScreen class also allows 
+"cloning" and deleting of a viewed virtual user.
 
 The UserScreen class allows to specify the name and introduction prompt 
 for a virtual user.
@@ -69,7 +69,7 @@ Builder.load_string(
 
 
 class UserScreen(MDScreen):
-    """Screen for creating, editing, replicating, and deleting virtual users."""
+    """Screen for viewing and editing a virtual user."""
 
     user = ObjectProperty(allownone=True)
     user_id = NumericProperty(allownone=True)

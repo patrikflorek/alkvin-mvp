@@ -20,7 +20,6 @@ from alkvin.entities.bot import Bot
 Builder.load_string(
     """
 <SelectBotListItem>:
-    preselected: False
     divider: None
     text: root.bot_name
 
@@ -46,6 +45,7 @@ Builder.load_string(
 class SelectBotListItem(OneLineAvatarIconListItem):
     """Custom list item widget for selecting a chat bot."""
 
+    preselected = BooleanProperty(False)
     editing_bot = BooleanProperty(False)
 
     bot_id = NumericProperty()
@@ -81,6 +81,8 @@ class SelectBotDialog(MDDialog):
         self.app = MDApp.get_running_app()
 
     def open(self, chat_bot_id=None):
+        self.auto_dismiss = chat_bot_id is not None
+
         if Bot.select().count() == 0:
             Bot.create(name="Dummy Bot")
 

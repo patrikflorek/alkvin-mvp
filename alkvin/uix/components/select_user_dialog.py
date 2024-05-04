@@ -20,7 +20,6 @@ from alkvin.entities.user import User
 Builder.load_string(
     """
 <SelectUserListItem>:
-    preselected: False
     divider: None
     text: root.user_name
     
@@ -82,6 +81,8 @@ class SelectUserDialog(MDDialog):
         self.app = MDApp.get_running_app()
 
     def open(self, chat_user_id=None):
+        self.auto_dismiss = chat_user_id is not None
+
         if User.select().count() == 0:
             User.create(name="Dummy User")
 
