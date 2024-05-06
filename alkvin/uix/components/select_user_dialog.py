@@ -3,7 +3,11 @@ Select User Dialog
 ==================
 
 This module contains the SelectUserDialog class, which is a custom dialog widget
-used for selecting a chat user from a list of available chat users.
+used for selecting a virtual chat user from a list of available chat users.
+
+Example usage:
+    dialog = SelectUserDialog(on_select_user_callback=lambda user_id: print(f"User selected: {user_id}"))
+    dialog.open(chat_user_id=1)
 """
 
 from kivy.lang import Builder
@@ -43,7 +47,7 @@ Builder.load_string(
 
 
 class SelectUserListItem(OneLineAvatarIconListItem):
-    """Custom list item widget for selecting a chat user."""
+    """Custom list item widget for selecting a virtual chat user."""
 
     preselected = BooleanProperty(False)
     editing_user = BooleanProperty(False)
@@ -53,7 +57,7 @@ class SelectUserListItem(OneLineAvatarIconListItem):
 
 
 class SelectUserDialog(MDDialog):
-    """Custom dialog widget for selecting a chat user."""
+    """Custom dialog widget for selecting a virtual chat user."""
 
     selected_user_id = NumericProperty()
 

@@ -1,3 +1,11 @@
+"""
+DB
+==
+
+This module contains the database configuration and the base model for the
+application.
+"""
+
 from datetime import datetime
 
 from peewee import DateTimeField, Model, SqliteDatabase

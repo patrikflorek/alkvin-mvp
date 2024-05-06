@@ -1,3 +1,15 @@
+"""
+Invalid Data Error Snackbar
+===========================
+
+This module contains the InvalidDataErrorSnackbar class, which is a custom snackbar widget
+used for displaying an error message when invalid data is detected.
+
+Example usage:
+    snackbar = InvalidDataErrorSnackbar()
+    snackbar.open(text="Invalid data detected!")
+"""
+
 from kivy.core.window import Window
 from kivy.properties import StringProperty
 

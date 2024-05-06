@@ -6,7 +6,8 @@ This module defines the ChatScreen class which represents the screen where
 a user can interact with a chat bot.
 
 The ChatScreen class displays the chat messages between the user and 
-the chat bot, as well as options to summarize the chat, select a user, select a bot, and delete the chat.
+the chat bot, as well as options to summarize the chat, select a user, select 
+a bot, and delete the chat.
 """
 
 import os
@@ -89,6 +90,9 @@ Builder.load_string(
                         required: True
                         text: root.chat_title
                         on_text: root.chat_title = self.text
+                        helper_text_mode: "on_error"
+                        helper_text: "Cannot be empty"
+                        error: True if root.chat_title == "" else False
 
                     MDTextField:
                         hint_text: "Summary"

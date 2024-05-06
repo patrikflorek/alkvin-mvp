@@ -1,3 +1,14 @@
+"""
+Assistant Message
+=================
+
+This module defines the AssistantMessage model class, which is used to store
+assistant messages in the database.
+
+Example usage:
+    message = AssistantMessage.create(chat=chat, completion="This is a completion.")
+"""
+
 import os
 from datetime import datetime
 

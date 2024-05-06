@@ -1,3 +1,13 @@
+"""
+User Message
+============
+
+This module contains the UserMessage model class, which is used to store chat user messages in the database.
+
+Example usage:
+    message = UserMessage.create(chat=chat, audio_file="audio.wav")
+"""
+
 import os
 from datetime import datetime
 

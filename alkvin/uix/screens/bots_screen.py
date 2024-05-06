@@ -2,7 +2,7 @@
 Bots Screen
 ===========
 
-This module defines the BotsScreen class which represents the screen 
+This module defines the BotsScreen class, which represents the screen 
 for displaying a list of available chat bots and provides functionality
 for creating new bots.
 """
@@ -80,12 +80,12 @@ class BotsScreen(MDScreen):
         if Bot.select().count() == 0:
             Bot.create(name="Dummy Bot")
 
-        bots = Bot.select(Bot.id, Bot.name, Bot.generation_prompt).order_by(Bot.name)
+        bots = Bot.select(Bot.id, Bot.name, Bot.completion_prompt).order_by(Bot.name)
         self.bot_items = [
             {
                 "bot_id": bot.id,
                 "bot_name": bot.name,
-                "bot_instructions": bot.generation_prompt,
+                "bot_instructions": bot.completion_prompt,
             }
             for bot in bots
         ]

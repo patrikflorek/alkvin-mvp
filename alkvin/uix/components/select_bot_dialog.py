@@ -4,6 +4,10 @@ Select Bot Dialog
 
 This module contains the SelectBotDialog class, which is a custom dialog widget
 used for selecting a chat bot from a list of available chat bots.
+
+Example usage:
+    dialog = SelectBotDialog(on_select_bot_callback=lambda bot_id: print(f"Bot selected: {bot_id}"))
+    dialog.open(chat_bot_id=1)
 """
 
 from kivy.lang import Builder
@@ -80,9 +84,23 @@ class SelectBotDialog(MDDialog):
 
         self.app = MDApp.get_running_app()
 
-    def open(self, chat_bot_id=None):
-        self.auto_dismiss = chat_bot_id is not None
+    def preselect_bot(self, bot_list_item, value):
+        if value:
+            self.selected_bot_id = bot_list_item.bot_id
 
+    def edit_bot(self, bot_list_item, value):
+        self.on_select_bot_callback(bot_list_item.bot_id)
+
+        self.dismiss()
+
+        self.app.root.switch_screen("bot_screen", bot_list_item.bot_id)
+
+    def open(self, chat_bot_id=None):
+        self.auto_dismiss = (
+            chat_bot_id is not None
+        )  # Can only dismiss if a bot is preselected
+
+        # There must be at least one bot in the database
         if Bot.select().count() == 0:
             Bot.create(name="Dummy Bot")
 
@@ -111,17 +129,6 @@ class SelectBotDialog(MDDialog):
         self.dismiss()
 
         self.app.root.switch_screen("bot_create_screen", new_bot.id)
-
-    def preselect_bot(self, bot_list_item, value):
-        if value:
-            self.selected_bot_id = bot_list_item.bot_id
-
-    def edit_bot(self, bot_list_item, value):
-        self.on_select_bot_callback(bot_list_item.bot_id)
-
-        self.dismiss()
-
-        self.app.root.switch_screen("bot_screen", bot_list_item.bot_id)
 
     def select_bot(self, instance):
         self.on_select_bot_callback(self.selected_bot_id)

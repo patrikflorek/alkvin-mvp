@@ -1,3 +1,16 @@
+"""
+Recycling Bin
+=============
+
+This module defines the RecyclingBin class, which is used to recycle message 
+widgets. Its purpose is to increase the application performance by preventing
+unnecessary creation and destruction of message widgets.
+
+When there are no more references to a message widget, upon request 
+the RecyclingBin class creates and stores a new instance of appropriate 
+message widget.
+"""
+
 from alkvin.uix.components.user_message_card import UserMessageCard
 from alkvin.uix.components.assistant_message_card import AssistantMessageCard
 

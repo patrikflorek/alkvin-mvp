@@ -2,10 +2,12 @@
 Home Screen
 ===========
 
-This module defines the HomeScreen class and related components for the Alkvin MVP application.
+This module defines the HomeScreen class and related components for 
+the Alkvin MVP application.
 
-The HomeScreen class represents the main screen of the application, which displays a menu directing users to different
-sections of the app, such as chats, users, bots, and settings.
+The HomeScreen class represents the main screen of the application, which 
+displays a menu directing users to differentsections of the app, such as chats, 
+users, bots, and settings.
 """
 
 from kivy.lang import Builder

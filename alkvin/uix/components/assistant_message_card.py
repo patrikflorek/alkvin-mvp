@@ -74,6 +74,8 @@ class AssistantMessageCard(MDCard):
         self.chat = chat
 
     def on_message(self, instance, message):
+        """Update content of the recycled message widget."""
+
         self.assistant_completion = message.completion
         self.assistant_speech_path = message.speech_path
 

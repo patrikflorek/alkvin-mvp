@@ -7,6 +7,8 @@ for modification of a new bot.
 
 The BotCreateScreen class code originates from code of the BotScreen class
 lacking the ability to replicate the newly created bot. 
+
+(Did not work when the BotCreateScreen was subclassed from the BotScreen class.)
 """
 
 from kivy.lang import Builder
@@ -53,34 +55,53 @@ Builder.load_string(
                 MDTextField:
                     id: bot_name_field
                     text: root.bot_name
+                    required: True
                     on_text: root.bot_name = self.text
                     hint_text: "Name"
+                    helper_tex_mode: "on_error"
+                    helper_text: "Cannot be empty"
+                    error: True if root.bot_name == "" else False
 
                 MDTextField:
-                    id: bot_language_field
-                    text: root.bot_language
+                    id: bot_transcription_language_field
+                    text: root.bot_transcription_language
                     on_text: root.bot_language = self.text
-                    hint_text: "Language"
+                    hint_text: "Transcription language"
 
                 MDTextField:
-                    id: bot_generation_prompt_field
-                    text: root.bot_generation_prompt
-                    on_text: root.bot_generation_prompt = self.text
+                    id: bot_transcription_prompt_field
+                    text: root.bot_transcription_prompt
+                    on_text: root.bot_transcription_prompt = self.text
+                    hint_text: "Transcription instructions"
+
+                MDTextField:
+                    id: bot_transcription_temperature_field
+                    text: root.bot_transcription_temperature
+                    on_text: root.validate_transcription_temperature(self)
+                    hint_text: "Transcription temperature"
+                    helper_tex_mode: "on_error"
+                    helper_text: "Must be a decimal number between 0.0 and 1.0"
+                
+                MDTextField:
+                    id: bot_completion_prompt_field
+                    text: root.bot_completion_prompt
+                    on_text: root.bot_completion_prompt = self.text
                     hint_text: "Text generation instructions"
                     multiline: True
+
+                MDTextField:
+                    id: bot_completion_temperature_field
+                    text: root.bot_completion_temperature
+                    on_text: root.validate_completion_temperature(self)
+                    hint_text: "Text generation temperature"
+                    helper_tex_mode: "on_error"
+                    helper_text: "Must be a decimal number between 0.0 and 2.0"
 
                 MDTextField:
                     id: bot_summarization_prompt_field
                     text: root.bot_summarization_prompt
                     on_text: root.bot_summarization_prompt = self.text
                     hint_text: "Summarization instructions"
-                    multiline: True
-
-                MDTextField:
-                    id: bot_speech_prompt_field
-                    text: root.bot_speech_prompt
-                    on_text: root.bot_speech_prompt = self.text
-                    hint_text: "Text-to-speech instructions"
                     multiline: True
 
                 MDTextField:
@@ -99,10 +120,12 @@ class BotCreateScreen(MDScreen):
     bot_id = NumericProperty(allownone=True)
 
     bot_name = StringProperty()
-    bot_language = StringProperty()
-    bot_generation_prompt = StringProperty()
+    bot_transcription_language = StringProperty()
+    bot_transcription_prompt = StringProperty()
+    bot_transcription_temperature = StringProperty()
+    bot_completion_prompt = StringProperty()
+    bot_completion_temperature = StringProperty()
     bot_summarization_prompt = StringProperty()
-    bot_speech_prompt = StringProperty()
     bot_speech_voice = StringProperty()
 
     def __init__(self, **kwargs):
@@ -126,6 +149,26 @@ class BotCreateScreen(MDScreen):
 
         self.delete_bot_dialog = DeleteBotDialog()
 
+    def validate_transcription_temperature(self, transcription_temperature_field):
+        self.bot_transcription_temperature = transcription_temperature_field.text
+
+        try:
+            temperature = float(self.bot_transcription_temperature)
+        except ValueError:
+            transcription_temperature_field.error = True
+        else:
+            transcription_temperature_field.error = not (0.0 <= temperature <= 1.0)
+
+    def validate_completion_temperature(self, completion_temperature_field):
+        self.bot_completion_temperature = completion_temperature_field.text
+
+        try:
+            temperature = float(self.bot_completion_temperature)
+        except ValueError:
+            completion_temperature_field.error = True
+        else:
+            completion_temperature_field.error = not (0.0 <= temperature <= 2.0)
+
     def on_bot_speech_voice(self, instance, value):
         self.ids.bot_speech_voice_field.text = value
 
@@ -137,10 +180,12 @@ class BotCreateScreen(MDScreen):
         self.bot = Bot.get_by_id(self.bot_id)
 
         self.bot_name = self.bot.name
-        self.bot_language = self.bot.language
-        self.bot_generation_prompt = self.bot.generation_prompt
+        self.bot_transcription_language = self.bot.transcription_language
+        self.bot_transcription_prompt = self.bot.transcription_prompt
+        self.bot_transcription_temperature = str(self.bot.transcription_temperature)
+        self.bot_completion_prompt = self.bot.completion_prompt
+        self.bot_completion_temperature = str(self.bot.completion_temperature)
         self.bot_summarization_prompt = self.bot.summarization_prompt
-        self.bot_speech_prompt = self.bot.speech_prompt
         self.bot_speech_voice = self.bot.speech_voice
 
         self.taken_bot_names = self.bot.get_taken_names()
@@ -155,10 +200,35 @@ class BotCreateScreen(MDScreen):
             raise ValueError(f"Bot name '{self.bot_name}' is already taken")
 
         self.bot.name = self.bot_name
-        self.bot.language = self.bot_language
-        self.bot.generation_prompt = self.bot_generation_prompt
+
+        self.bot.transcription_language = self.bot_transcription_language
+        self.bot.transcription_prompt = self.bot_transcription_prompt
+
+        try:
+            self.bot.transcription_temperature = float(
+                self.bot_transcription_temperature
+            )
+        except ValueError:
+            raise ValueError("Transcription temperature must be a number")
+        else:
+            if not (0.0 < self.bot.transcription_temperature < 1.0):
+                raise ValueError(
+                    "Transcription temperature must be between 0.0 and 1.0"
+                )
+
+        self.bot.completion_prompt = self.bot_completion_prompt
+        try:
+            self.bot.completion_temperature = float(self.bot_completion_temperature)
+        except ValueError:
+            raise ValueError("Text generation temperature must be a number")
+        else:
+            if not (0.0 < self.bot.completion_temperature < 2.0):
+                raise ValueError(
+                    "Text generation temperature must be between 0.0 and 2.0"
+                )
+
         self.bot.summarization_prompt = self.bot_summarization_prompt
-        self.bot.speech_prompt = self.bot_speech_prompt
+
         self.bot.speech_voice = self.bot_speech_voice
 
         self.bot.save()

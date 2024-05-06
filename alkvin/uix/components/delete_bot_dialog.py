@@ -1,3 +1,15 @@
+"""
+Delete Bot Dialog
+=================
+
+This module contains the DeleteBotDialog class, which is a custom dialog widget
+used to prompt the user to confirm the deletion of a chat bot.
+
+Example usage:
+    dialog = DeleteBotDialog()
+    dialog.open(bot_name="My Bot", on_delete_bot_callback=lambda: print("Bot deleted!"))
+"""
+
 from kivy.properties import StringProperty
 
 from kivymd.uix.button import MDFlatButton
@@ -24,6 +36,7 @@ class DeleteBotDialog(MDDialog):
         super().__init__(**kwargs)
 
     def on_delete_bot_callback(self):
+        # This method is called when the user confirms the deletion of the bot.
         pass
 
     def open(self, bot_name, on_delete_bot_callback):

@@ -55,8 +55,12 @@ Builder.load_string(
                 MDTextField:
                     id: user_name_field
                     text: root.user_name
+                    required: True
                     on_text: root.user_name = self.text
                     hint_text: "Name"
+                    helper_text_mode: "on_error"
+                    helper_text: "Cannot be empty"
+                    error: True if root.user_name == "" else False
 
                 MDTextField:
                     id: user_introduction_field

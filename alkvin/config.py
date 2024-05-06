@@ -1,3 +1,8 @@
+"""
+Application configuration
+=========================
+"""
+
 import os
 
 

@@ -109,6 +109,8 @@ class UserMessageCard(MDCard):
         self.chat = chat
 
     def on_message(self, instance, message):
+        """Update content of the recycled message widget."""
+
         self.user_audio_path = message.audio_path
         self.user_transcript = message.transcript
 

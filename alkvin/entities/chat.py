@@ -1,3 +1,14 @@
+"""
+Chat
+====
+
+This module defines the Chat model class, which is used to store chat 
+conversations in the database.
+
+Example usage:
+    chat = Chat.create(title="My Chat")
+"""
+
 import os
 import shutil
 from uuid import uuid4
@@ -24,6 +35,8 @@ class Chat(BaseModel):
 
     @property
     def messages(self):
+        """Get all messages in the chat, sorted by sent time."""
+
         def messages_sorting_key(message):
             from .user_message import UserMessage
             from .assistant_message import AssistantMessage
@@ -54,6 +67,8 @@ class Chat(BaseModel):
 
     @property
     def messages_to_complete(self):
+        """Conversation messages and prompts packed in the API format."""
+
         from .user_message import UserMessage
         from .assistant_message import AssistantMessage
 
@@ -85,6 +100,8 @@ class Chat(BaseModel):
         return cls.create(title=new_chat_title, summary=new_chat_summary)
 
     def delete_instance(self, *args, **kwargs):
+        """Delete the chat instance and all its messages and audio files."""
+
         for user_message in self.user_messages:
             user_message.delete_instance()
         for assistant_message in self.assistant_messages:

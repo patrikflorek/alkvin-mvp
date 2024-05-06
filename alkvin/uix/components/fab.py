@@ -1,9 +1,12 @@
 """
 Floating Action Button (FAB)
-===
+============================
 
 This module contains a custom floating action button (FAB) widget with fixed
-elevation effect.
+elevation defect.
+
+Example usage:
+    fab = FAB()
 """
 
 from kivy.clock import Clock
@@ -13,7 +16,7 @@ from kivymd.uix.button import MDFloatingActionButton
 
 
 class FAB(MDFloatingActionButton):
-    """Custom floating action button (FAB) widget with fixed elevation effect."""
+    """Custom floating action button (FAB) widget with fixed elevation defect."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

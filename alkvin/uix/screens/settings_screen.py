@@ -2,9 +2,11 @@
 Settings Screen
 ===============
 
-This module defines the SettingsScreen class which represents the screen for configuring the application settings.
+This module defines the SettingsScreen class which represents the screen 
+for configuring the application settings.
 
-The SettingsScreen class allows users to set the OpenAI API key required to run OpenAI models.
+The SettingsScreen class allows users to set the OpenAI API key required to run
+OpenAI models.
 """
 
 from dotenv import get_key, set_key
