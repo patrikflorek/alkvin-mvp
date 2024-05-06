@@ -2,9 +2,11 @@
 Settings Screen
 ===============
 
-This module defines the SettingsScreen class which represents the screen for configuring the application settings.
+This module defines the SettingsScreen class which represents the screen 
+for configuring the application settings.
 
-The SettingsScreen class allows users to set the OpenAI API key required to run OpenAI models.
+The SettingsScreen class allows users to set the OpenAI API key required to run
+OpenAI models.
 """
 
 from dotenv import get_key, set_key
@@ -13,6 +15,8 @@ from kivy.lang import Builder
 from kivy.properties import StringProperty
 
 from kivymd.uix.screen import MDScreen
+
+from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
 
 
 Builder.load_string(
@@ -26,7 +30,7 @@ Builder.load_string(
             specific_text_color: app.theme_cls.opposite_text_color
             left_action_items: 
                 [
-                ["arrow-left", lambda x: app.root.switch_back(), "Back", "Back"]
+                ["arrow-left", lambda x: root.switch_back(), "Back", "Back"]
                 ]
 
         ScrollView:
@@ -61,10 +65,24 @@ class SettingsScreen(MDScreen):
 
     openai_api_key = StringProperty()
 
-    def on_enter(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.missing_api_key_snackbar = InvalidDataErrorSnackbar()
+        self.missing_api_key_snackbar.text = "OpenAI API key is required"
+
+    def on_pre_enter(self):
         openai_api_key = get_key(".env", "OPENAI_API_KEY")
-        if openai_api_key is not None:
+
+        if openai_api_key is None:
+            self.missing_api_key_snackbar.open()
+        else:
             self.openai_api_key = openai_api_key
 
-    def on_pre_leave(self):
+    def switch_back(self):
+        if not self.openai_api_key:
+            self.missing_api_key_snackbar.open()
+            return
+
         set_key(".env", "OPENAI_API_KEY", self.openai_api_key)
+        self.manager.switch_back()

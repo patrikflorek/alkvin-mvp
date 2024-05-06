@@ -3,19 +3,22 @@ User Screen
 ===========
 
 This module defines the UserScreen class which represents the screen
-for creating and editing virtual users. The UserScreen class also allows
-"cloning" and deleting a viewed user.
+for viewing and editing a virtual user. The UserScreen class also allows 
+"cloning" and deleting of a viewed virtual user.
 
 The UserScreen class allows to specify the name and introduction prompt 
 for a virtual user.
 """
 
 from kivy.lang import Builder
-from kivy.properties import NumericProperty, StringProperty
+from kivy.properties import NumericProperty, ObjectProperty, StringProperty
 
-from kivymd.uix.button import MDFlatButton
-from kivymd.uix.dialog import MDDialog
 from kivymd.uix.screen import MDScreen
+
+from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
+from alkvin.uix.components.delete_user_dialog import DeleteUserDialog
+
+from alkvin.entities.user import User
 
 
 Builder.load_string(
@@ -32,12 +35,12 @@ Builder.load_string(
             use_overflow: True
             left_action_items: 
                 [
-                ["arrow-left", lambda x: app.root.switch_back(), "Back", "Back"]
+                ["arrow-left", lambda x: root.switch_back(), "Back", "Back"]
                 ]
             right_action_items:
                 [
                 ["content-copy", lambda x: root.clone_user(), "Clone", "Clone"],
-                ["delete", lambda x: root.open_delete_user_dialog(), "Delete", "Delete"]
+                ["delete", lambda x: root.delete_user_dialog.open(root.user_name, root.delete_user), "Delete", "Delete"]
                 ]
 
         ScrollView:
@@ -52,8 +55,11 @@ Builder.load_string(
                 MDTextField:
                     id: user_name_field
                     text: root.user_name
+                    required: True
                     on_text: root.user_name = self.text
                     hint_text: "Name"
+                    helper_text: "Cannot be empty"
+                    error: True if root.user_name == "" else False
 
                 MDTextField:
                     id: user_introduction_field
@@ -66,58 +72,70 @@ Builder.load_string(
 
 
 class UserScreen(MDScreen):
-    """Screen for creating, editing, replicating, and deleting virtual users."""
+    """Screen for viewing and editing a virtual user."""
 
+    user = ObjectProperty(allownone=True)
     user_id = NumericProperty(allownone=True)
 
     user_name = StringProperty()
     user_introduction = StringProperty()
 
-    delete_user_dialog = None
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def on_enter(self):
-        self.ids.user_screen_top_app_bar.title = (
-            "User" if self.user_id is not None else "New user"
-        )
+        self.invalid_data_error_snackbar = InvalidDataErrorSnackbar()
 
-        if self.user_id is None:
-            # Create new user
-            self.user_name = "New user"
-            self.user_introduction = "Hi, I am a new user."
-        else:
-            # Load user
-            self.user_name = "John Doe"
-            self.user_introduction = "Hello, I am John Doe."
+        self.delete_user_dialog = DeleteUserDialog()
+
+    def on_pre_enter(self):
+        self.user = User.get_by_id(self.user_id)
+
+        self.user_name = self.user.name
+        self.user_introduction = self.user.introduction
+
+        self.taken_user_names = self.user.get_taken_names()
+
+    def save_user(self):
+        self.user_name = self.user_name.strip()
+
+        if self.user_name == "":
+            raise ValueError("User name cannot be empty")
+
+        if self.user_name in self.taken_user_names:
+            raise ValueError(f"User name '{self.user_name}' is already taken")
+
+        self.user.name = self.user_name
+        self.user.introduction = self.user_introduction
+
+        self.user.save()
+
+    def has_valid_data(self):
+        try:
+            self.save_user()
+        except ValueError as e:
+            self.invalid_data_error_snackbar.text = str(e)
+            self.invalid_data_error_snackbar.open()
+
+            return False
+
+        return True
+
+    def switch_back(self):
+        if not self.has_valid_data():
+            return
+
+        self.manager.switch_back()
 
     def clone_user(self):
-        print("Cloning user")  # TODO: Implement cloning user
+        if not self.has_valid_data():
+            return
 
-        self.manager.switch_screen(
-            "user_clone_screen", {"original_user_id": self.user_id}
-        )
+        user_clone = self.user.clone()
 
-    def open_delete_user_dialog(self):
-        if self.delete_user_dialog is None:
-            self.delete_user_dialog = MDDialog(
-                title="Delete user",
-                text="Are you sure you want to delete this user?",
-                buttons=[
-                    MDFlatButton(
-                        text="CANCEL",
-                        on_release=lambda x: self.delete_user_dialog.dismiss(),
-                    ),
-                    MDFlatButton(
-                        text="DELETE",
-                        theme_text_color="Error",
-                        on_release=lambda x: self.delete_user(),
-                    ),
-                ],
-            )
-
-        self.delete_user_dialog.open()
+        self.manager.switch_screen("user_clone_screen", user_clone.id)
 
     def delete_user(self):
-        print("Deleting user")  # TODO: Implement deleting user
+        self.user.delete_instance()
 
         self.delete_user_dialog.dismiss()
         self.manager.switch_back()

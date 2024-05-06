@@ -1,12 +1,14 @@
 """
-Bot Screen
-==========
+Bot Replicate Screen
+====================
 
-This module defines the BotScreen class which represents the screen
-for viewing and editing a chat. The BotScreen class also provides navigation
-to replication and deletion of a viewed chat bot. 
+This module defines the BotReplicateScreen class which represents the screen
+for modification of a replica of a chat bot.
 
-The BotScreen class allows to specify the Bot model data.
+The BotReplicaScreen class code originates from code of the BotScreen class
+lacking the ability to replicate the newly created bot replica.
+
+(Did not work when the BotReplicateScreen was subclassed from the BotScreen class.)
 """
 
 from kivy.lang import Builder
@@ -23,13 +25,13 @@ from alkvin.entities.bot import Bot
 
 Builder.load_string(
     """
-<BotScreen>:
+<BotReplicateScreen>:
     MDBoxLayout:
         orientation: "vertical"
         
         MDTopAppBar:
             id: bot_screen_top_app_bar
-            title: "Bot"
+            title: "Bot replica"
             specific_text_color: app.theme_cls.opposite_text_color
             use_overflow: True
             left_action_items: 
@@ -38,7 +40,6 @@ Builder.load_string(
                 ]
             right_action_items: 
                 [
-                ["content-copy", lambda x: root.replicate_bot(), "Replicate", "Replicate"],
                 ["delete", lambda x: root.delete_bot_dialog.open(root.bot_name, root.delete_bot), "Delete", "Delete"]
                 ]
         
@@ -109,8 +110,8 @@ Builder.load_string(
 )
 
 
-class BotScreen(MDScreen):
-    """Screen for viewing and editing a chat bot."""
+class BotReplicateScreen(MDScreen):
+    """Screen for replicating a chat bot."""
 
     bot = ObjectProperty(allownone=True)
     bot_id = NumericProperty(allownone=True)
@@ -245,14 +246,6 @@ class BotScreen(MDScreen):
             return
 
         self.manager.switch_back()
-
-    def replicate_bot(self):
-        if not self.has_valid_data():
-            return
-
-        bot_replica = self.bot.replicate()
-
-        self.manager.switch_screen("bot_replicate_screen", bot_replica.id)
 
     def delete_bot(self):
         self.bot.delete_instance()

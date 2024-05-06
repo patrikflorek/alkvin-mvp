@@ -2,25 +2,32 @@
 Bots Screen
 ===========
 
-This module defines the BotsScreen class which represents the screen 
+This module defines the BotsScreen class, which represents the screen 
 for displaying a list of available chat bots and provides functionality
 for creating new bots.
 """
 
 from kivy.lang import Builder
-from kivy.properties import ListProperty, NumericProperty
+from kivy.properties import ListProperty, NumericProperty, StringProperty
 
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineListItem
+
+from alkvin.entities.bot import Bot
 
 
 Builder.load_string(
     """
 #:import FAB alkvin.uix.components.fab.FAB
 
-<BotsScreenBotItem>:
-    on_release: app.root.switch_screen("bot_screen", {"bot_id": self.bot_id})
 
+<BotsScreenBotItem>:
+    text: root.bot_name
+    secondary_text: root.bot_instructions
+
+    on_release: app.root.switch_screen("bot_screen", root.bot_id)
+
+    
 <BotsScreen>:
     MDBoxLayout:
         orientation: "vertical"
@@ -51,15 +58,17 @@ Builder.load_string(
         FAB:
             icon: "robot-love"
             
-            on_release: app.root.switch_screen("bot_screen", {"bot_id": None})
+            on_release: root.switch_to_new_bot()
 """
 )
 
 
 class BotsScreenBotItem(TwoLineListItem):
-    """Custom list item for displaying a chat bot."""
+    """Custom list item for displaying chat bots."""
 
     bot_id = NumericProperty()
+    bot_name = StringProperty()
+    bot_instructions = StringProperty()
 
 
 class BotsScreen(MDScreen):
@@ -67,8 +76,21 @@ class BotsScreen(MDScreen):
 
     bot_items = ListProperty()
 
-    def on_enter(self):
+    def on_pre_enter(self):
+        if Bot.select().count() == 0:
+            Bot.create(name="Dummy Bot")
+
+        bots = Bot.select(Bot.id, Bot.name, Bot.completion_prompt).order_by(Bot.name)
         self.bot_items = [
-            {"bot_id": i, "text": f"Bot {i}", "secondary_text": f"Bot {i} instructions"}
-            for i in range(1, 6)
+            {
+                "bot_id": bot.id,
+                "bot_name": bot.name,
+                "bot_instructions": bot.completion_prompt,
+            }
+            for bot in bots
         ]
+
+    def switch_to_new_bot(self):
+        new_bot = Bot.new()
+
+        self.manager.switch_screen("bot_create_screen", new_bot.id)

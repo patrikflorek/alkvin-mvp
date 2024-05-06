@@ -8,10 +8,12 @@ for creating a new chat.
 """
 
 from kivy.lang import Builder
-from kivy.properties import ListProperty, NumericProperty
+from kivy.properties import ListProperty, NumericProperty, StringProperty
 
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineListItem
+
+from alkvin.entities.chat import Chat
 
 
 Builder.load_string(
@@ -20,7 +22,10 @@ Builder.load_string(
 
 
 <ChatsScreenChatItem>:
-    on_release: app.root.switch_screen("chat_screen", {"chat_id": self.chat_id})
+    text: root.chat_title
+    secondary_text: root.chat_summary
+
+    on_release: app.root.switch_screen("chat_screen", root.chat_id)
 
 
 <ChatsScreen>:
@@ -53,7 +58,7 @@ Builder.load_string(
         FAB:
             icon: "message-plus"
             
-            on_release: app.root.switch_screen("chat_screen", {"chat_id": None})
+            on_release: root.switch_to_new_chat()
 """
 )
 
@@ -62,6 +67,8 @@ class ChatsScreenChatItem(TwoLineListItem):
     """Custom list item widget for displaying chat items."""
 
     chat_id = NumericProperty()
+    chat_title = StringProperty()
+    chat_summary = StringProperty()
 
 
 class ChatsScreen(MDScreen):
@@ -69,11 +76,20 @@ class ChatsScreen(MDScreen):
 
     chat_items = ListProperty()
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def on_enter(self):
+    def on_pre_enter(self):
+        chats = Chat.select(Chat.id, Chat.title, Chat.summary).order_by(
+            Chat.updated_at.desc()
+        )
         self.chat_items = [
-            {"chat_id": i, "text": f"Chat {i}", "secondary_text": f"Chat {i} summary"}
-            for i in range(1, 6)
+            {
+                "chat_id": chat.id,
+                "chat_title": chat.title,
+                "chat_summary": chat.summary,
+            }
+            for chat in chats
         ]
+
+    def switch_to_new_chat(self):
+        new_chat = Chat.new()
+
+        self.manager.switch_screen("chat_screen", new_chat.id)

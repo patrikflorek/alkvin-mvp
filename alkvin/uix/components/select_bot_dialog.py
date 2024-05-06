@@ -4,38 +4,44 @@ Select Bot Dialog
 
 This module contains the SelectBotDialog class, which is a custom dialog widget
 used for selecting a chat bot from a list of available chat bots.
+
+Example usage:
+    dialog = SelectBotDialog(on_select_bot_callback=lambda bot_id: print(f"Bot selected: {bot_id}"))
+    dialog.open(chat_bot_id=1)
 """
 
 from kivy.lang import Builder
-from kivy.properties import NumericProperty
+from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 
 from kivymd.app import MDApp
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.list import OneLineAvatarIconListItem
 
+from alkvin.entities.bot import Bot
+
 
 Builder.load_string(
     """
 <SelectBotListItem>:
-    id: select_bot_list_item
+    divider: None
+    text: root.bot_name
 
     on_release: bot_select_checkbox.active = True
 
     IconLeftWidget:
         MDCheckbox:
             id: bot_select_checkbox
-            _select_bot_list_item: select_bot_list_item
             group: "bots"
             
-            on_release: self.active = True
+            on_active: root.preselected = self.active
 
     IconRightWidget:
         icon: "pencil"
         disabled: not bot_select_checkbox.active
         opacity: int(bot_select_checkbox.active)
         
-        on_release: root.edit_bot()
+        on_release: root.editing_bot = True
 """
 )
 
@@ -43,17 +49,11 @@ Builder.load_string(
 class SelectBotListItem(OneLineAvatarIconListItem):
     """Custom list item widget for selecting a chat bot."""
 
+    preselected = BooleanProperty(False)
+    editing_bot = BooleanProperty(False)
+
     bot_id = NumericProperty()
-
-    def __init__(self, bot_id, **kwargs):
-        super().__init__(**kwargs)
-        self.bot_id = bot_id
-        self.app = MDApp.get_running_app()
-
-    def edit_bot(self):
-        chat_screen = self.app.root.get_screen("chat_screen")
-        chat_screen.select_bot_dialog.dismiss()
-        self.app.root.switch_screen("bot_screen", {"bot_id": self.bot_id})
+    bot_name = StringProperty()
 
 
 class SelectBotDialog(MDDialog):
@@ -71,11 +71,11 @@ class SelectBotDialog(MDDialog):
             buttons=[
                 MDFlatButton(
                     text="CREATE NEW",
-                    on_release=self._create_new_bot,
+                    on_release=self.create_bot,
                 ),
                 MDFlatButton(
                     text="SELECT",
-                    on_release=self._select_bot,
+                    on_release=self.select_bot,
                 ),
             ],
             auto_dismiss=False,
@@ -84,49 +84,53 @@ class SelectBotDialog(MDDialog):
 
         self.app = MDApp.get_running_app()
 
-    def _create_new_bot(self, instance):
+    def preselect_bot(self, bot_list_item, value):
+        if value:
+            self.selected_bot_id = bot_list_item.bot_id
+
+    def edit_bot(self, bot_list_item, value):
+        self.on_select_bot_callback(bot_list_item.bot_id)
+
         self.dismiss()
 
-        self.app.root.switch_screen("bot_screen")
+        self.app.root.switch_screen("bot_screen", bot_list_item.bot_id)
 
-    def _select_bot(self, instance):
+    def open(self, chat_bot_id=None):
+        self.auto_dismiss = (
+            chat_bot_id is not None
+        )  # Can only dismiss if a bot is preselected
+
+        # There must be at least one bot in the database
+        if Bot.select().count() == 0:
+            Bot.create(name="Dummy Bot")
+
+        bots = Bot.select(Bot.id, Bot.name).order_by(Bot.name)
+        bot_ids = [bot.id for bot in bots]
+        self.selected_bot_id = chat_bot_id if chat_bot_id in bot_ids else bot_ids[0]
+
+        bot_list_items = []
+        for bot in bots:
+            bot_list_item = SelectBotListItem(bot_id=bot.id, bot_name=bot.name)
+            if bot.id == self.selected_bot_id:
+                bot_list_item.ids.bot_select_checkbox.active = True
+
+            bot_list_item.bind(preselected=self.preselect_bot)
+            bot_list_item.bind(editing_bot=self.edit_bot)
+            bot_list_items.append(bot_list_item)
+
+        self.update_items(bot_list_items)
+
+        super().open()
+
+    def create_bot(self, instance):
+        new_bot = Bot.new()
+        self.on_select_bot_callback(new_bot.id)
+
         self.dismiss()
 
+        self.app.root.switch_screen("bot_create_screen", new_bot.id)
+
+    def select_bot(self, instance):
         self.on_select_bot_callback(self.selected_bot_id)
 
-    def _select_bot_list_item_active(self, checkbox, is_active):
-        if is_active:
-            self.selected_bot_id = checkbox._select_bot_list_item.bot_id
-
-    def _get_select_bot_list_items(self, items_data, selected_bot_id):
-        if selected_bot_id is not None:
-            self.select_bot_id = selected_bot_id
-
-        select_bot_list_items = []
-        is_selected_bot_id_found = False
-
-        for item_data in items_data:
-            select_bot_list_item = SelectBotListItem(
-                bot_id=item_data["bot_id"], text=item_data["bot_name"]
-            )
-
-            select_bot_list_item.ids.bot_select_checkbox.bind(
-                active=self._select_bot_list_item_active
-            )
-
-            if item_data["bot_id"] == self.selected_bot_id:
-                select_bot_list_item.ids.bot_select_checkbox.active = True
-                is_selected_bot_id_found = True
-
-            select_bot_list_items.append(select_bot_list_item)
-
-        if not is_selected_bot_id_found:
-            select_bot_list_items[0].ids.bot_select_checkbox.active = True
-            self.select_bot_id = select_bot_list_items[0].bot_id
-
-        return select_bot_list_items
-
-    def update_items(self, items_data, selected_bot_id=None):
-        super().update_items(
-            self._get_select_bot_list_items(items_data, selected_bot_id)
-        )
+        self.dismiss()

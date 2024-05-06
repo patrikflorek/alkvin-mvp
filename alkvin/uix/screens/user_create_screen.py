@@ -1,14 +1,14 @@
 """
-User Clone Screen
-=================
+User Create Screen
+==================
 
-This module defines the UserCloneScreen class which represents the screen
-for modification a "clone" of a virtual user.
+This module defines the UserCreateScreen class which represents the screen
+for modification of a new virtual user.
 
-The UserCloneScreen class code originates from code of UserScreen class 
-lacking the ability to clone the newly created virtual user clone.
+The UserCreateScreen class code originates from code of the UserScreen class 
+lacking the ability to "clone" the newly created virtual user. 
 
-(Did not work when the UserCloneScreen was subclassed from the UserScreen class.)
+(Did not work when the UserCreateScreen was subclassed from the UserScreen class.)
 """
 
 from kivy.lang import Builder
@@ -24,14 +24,14 @@ from alkvin.entities.user import User
 
 Builder.load_string(
     """
-<UserCloneScreen>:
+<UserCreateScreen>:
     MDBoxLayout:
         orientation: "vertical"
         
         MDTopAppBar:
             id: user_screen_top_app_bar
 
-            title: "User clone"
+            title: "New user"
             specific_text_color: app.theme_cls.opposite_text_color
             use_overflow: True
             left_action_items: 
@@ -71,8 +71,8 @@ Builder.load_string(
 )
 
 
-class UserCloneScreen(MDScreen):
-    """Screen for "cloning" a virtual user."""
+class UserCreateScreen(MDScreen):
+    """Screen for creating a virtual user."""
 
     user = ObjectProperty(allownone=True)
     user_id = NumericProperty(allownone=True)

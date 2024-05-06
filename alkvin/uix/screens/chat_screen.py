@@ -6,20 +6,38 @@ This module defines the ChatScreen class which represents the screen where
 a user can interact with a chat bot.
 
 The ChatScreen class displays the chat messages between the user and 
-the chat bot, as well as options to summarize the chat, select a user, select a bot, and delete the chat.
+the chat bot, as well as options to summarize the chat, select a user, select 
+a bot, and delete the chat.
 """
 
+import os
+import shutil
+from datetime import datetime
+
+from kivy.animation import Animation
 from kivy.lang import Builder
-from kivy.properties import DictProperty, NumericProperty, StringProperty
+from kivy.properties import (
+    NumericProperty,
+    ObjectProperty,
+    StringProperty,
+)
 
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.screen import MDScreen
 
+from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
+from alkvin.uix.components.select_bot_dialog import SelectBotDialog
 from alkvin.uix.components.select_user_dialog import SelectUserDialog
 from alkvin.uix.components.user_message_card import UserMessageCard
-from alkvin.uix.components.select_bot_dialog import SelectBotDialog
-from alkvin.uix.components.assistant_message_card import AssistantMessageCard
+
+from alkvin.uix.tools.recycling import get_recycling_bin
+
+from alkvin.entities.bot import Bot
+from alkvin.entities.chat import Chat
+from alkvin.entities.user import User
+from alkvin.entities.user_message import UserMessage
+from alkvin.entities.assistant_message import AssistantMessage
 
 
 Builder.load_string(
@@ -37,7 +55,7 @@ Builder.load_string(
             use_overflow: True
             left_action_items: 
                 [
-                ["arrow-left", lambda x: app.root.switch_back(), "Back", "Back"]
+                ["arrow-left", lambda x: root.switch_back(), "Back", "Back"]
                 ]
             right_action_items: 
                 [
@@ -62,25 +80,23 @@ Builder.load_string(
                     padding: "40dp", "40dp", "40dp", "20dp"
                     spacing: "40dp"
                     adaptive_height: True
-                    radius: [dp(20)]
+                    radius: [dp(10)]
                     md_bg_color: "#efefef"
                     elevation: 0.5
 
-                    MDLabel:
+                    MDTextField:
+                        hint_text: "Title"
+                        required: True
                         text: root.chat_title
-                        font_style: "H6"
-                        theme_text_color: "Primary"
-                        adaptive_height: True
+                        on_text: root.chat_title = self.text
+                        helper_text: "Cannot be empty"
+                        error: True if root.chat_title == "" else False
 
-                    MDSeparator:
-                        height: "1dp"
-                
-                    MDLabel:
-                        text: root.chat_summary if root.chat_summary else "Press summarize button to generate a title and summary."
-                        font_style: "Body1" if root.chat_summary else "Subtitle1"
-                        theme_text_color: "Primary" if root.chat_summary else "Secondary"
-                        adaptive_height: True
-
+                    MDTextField:
+                        hint_text: "Summary"
+                        multiline: True
+                        text: root.chat_summary
+                        on_text: root.chat_summary = self.text
 
                     MDIconButton:
                         icon: "chevron-down"
@@ -91,14 +107,23 @@ Builder.load_string(
                         on_release: root.scroll_to_bottom()
                 
                 MDBoxLayout:
-                    id: chat_screen_messages_container
+                    id: chat_screen_sent_messages_container
                     
+                    orientation: "vertical"
+                    spacing: "28dp"
+                    adaptive_height: True
+
+                MDBoxLayout:
+                    id: chat_screen_unsent_messages_container
+
                     orientation: "vertical"
                     padding: 0, 0, 0, "64dp"
                     spacing: "28dp"
                     adaptive_height: True
                 
     AudioRecorderBox:
+        id: chat_screen_audio_recorder
+
         pos_hint: {"y": 0}
 """
 )
@@ -107,17 +132,22 @@ Builder.load_string(
 class ChatScreen(MDScreen):
     """Screen for interacting with a chat bot using voice messages."""
 
+    chat = ObjectProperty(allownone=True)
     chat_id = NumericProperty(allownone=True)
 
-    chat_title = StringProperty("A new chat")
-    chat_summary = StringProperty("This is a summary of the chat so far.")
-    chat_user = DictProperty(None)
-    chat_bot = DictProperty(None)
+    chat_title = StringProperty()
+    chat_summary = StringProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.select_user_dialog = SelectUserDialog(self._on_select_user_callback)
-        self.select_bot_dialog = SelectBotDialog(self._on_select_bot_callback)
+        self.recycling_bin = get_recycling_bin()
+
+        self.invalid_data_error_snackbar = InvalidDataErrorSnackbar()
+
+        self.select_user_dialog = SelectUserDialog(self.on_user_selected)
+
+        self.select_bot_dialog = SelectBotDialog(self.on_bot_selected)
+
         self.delete_chat_dialog = MDDialog(
             title="Delete chat",
             text="Are you sure you want to delete this chat?",
@@ -134,176 +164,174 @@ class ChatScreen(MDScreen):
             ],
         )
 
-    def _on_select_user_callback(self, user_id):
-        # TODO: Retrieve user data
+        self.ids.chat_screen_audio_recorder.on_recording_finished_callback = (
+            self.create_user_message
+        )
 
-        self.chat_user = {
-            "user_id": user_id,
-            "user_name": "John Doe",
-            "user_introduction": "Hello, I am John Doe.",
-        }
+    def create_user_message(self, audio_recording_path):
+        new_audio_file_name = f"user_{datetime.now().isoformat()}.opus"
+        new_audio_file_path = os.path.join(self.chat.audio_dir, new_audio_file_name)
+        shutil.move(audio_recording_path, new_audio_file_path)
 
-    def _on_select_bot_callback(self, bot_id):
-        # TODO: Retrieve bot data
+        message = UserMessage.create(chat=self.chat, audio_file=new_audio_file_name)
 
-        self.chat_bot = {
-            "bot_id": bot_id,
-            "bot_name": "Bot 1",
-            "bot_introduction": "Hello, I am Bot 1.",
-        }
+        message_widget = self.recycling_bin.get_message_widget(message, self.chat)
+        message_widget.bind(is_message_sent=self.on_user_message_sent)
 
-    def on_enter(self):
-        if self.chat_id is None:
-            # Create new chat
-            self.chat_title = "A new chat"
-            self.chat_summary = ""
-            self.chat_messages = []
-        else:
-            # Load chat
-            self.chat_title = "Chat 1"
-            self.chat_summary = "This is a summary of Chat 1."
+        self.ids.chat_screen_unsent_messages_container.add_widget(message_widget)
 
-            self.chat_messages = [
-                {
-                    "role": "user",
-                    "user_audio_file": "adstfswrrf.wav",
-                    "user_audio_created_at": "2020-07-01T12:01:00",
-                    "message_sent_at": "2020-07-01T12:01:02",
-                    "transcript_text": "Hello, I'm a human. I'm here to help you with any questions you may have about the product. How can I help you today?",
-                    "transcript_received_at": "2020-07-01T12:02:00",
-                },
-                {
-                    "role": "assistant",
-                    "completion_text": "Hello, I'm a bot. I'm here to help you with any questions you may have about the product. How can I help you today?",
-                    "completion_received_at": "2020-07-01T12:05:00",
-                    "speech_audio_file": "weqdstrwer.wav",
-                    "speech_audio_received_at": "2020-07-01T12:08:00",
-                },
-                {
-                    "role": "user",
-                    "user_audio_file": "kdqwservfy.wav",
-                    "user_audio_created_at": "2020-07-01T12:08:30",
-                    "message_sent_at": "2020-07-01T12:08:32",
-                    "transcript_text": "I have a question about the product. Can you tell me more about the features?",
-                    "transcript_received_at": "2020-07-01T12:09:00",
-                },
-                {
-                    "role": "assistant",
-                    "completion_text": "Sure! The product has a lot of features. It has a built-in camera, a microphone, and a speaker. It also has a touch screen display and a battery that can last for up to 12 hours. It's a great product for people who are always on the go.",
-                    "completion_received_at": "2020-07-01T12:10:00",
-                    "speech_audio_file": "",
-                    "speech_audio_received_at": "",
-                },
-                {
-                    "role": "user",
-                    "user_audio_file": "deasdfdpacvx.wav",
-                    "user_audio_created_at": "2020-07-01T12:12:30",
-                    "message_sent_at": "",
-                    "transcript_text": "Thank you for the information. I'm interested in purchasing the product. Can you tell me how I can place an order?",
-                    "transcript_received_at": "2020-07-01T12:12:32",
-                },
-                {
-                    "role": "user",
-                    "user_audio_file": "rgsonnksqeib.wav",
-                    "user_audio_created_at": "2020-07-01T12:12:34",
-                    "message_sent_at": "",
-                    "transcript_text": "",
-                },
-            ]
+    def select_user(self):
+        if self.has_valid_data():
+            self.select_user_dialog.open(self.chat.user_id)
 
-        self.ids.chat_screen_messages_container.clear_widgets()
-        for message in self.chat_messages:
-            if message["role"] == "user":
-                self.ids.chat_screen_messages_container.add_widget(
-                    UserMessageCard(
-                        user_audio_file=message.get("user_audio_file", ""),
-                        user_audio_created_at=message.get("user_audio_created_at", ""),
-                        message_sent_at=message.get("message_sent_at", ""),
-                        transcript_text=message.get("transcript_text", ""),
-                        transcript_received_at=message.get(
-                            "transcript_received_at", ""
-                        ),
-                    )
+    def on_user_selected(self, user_id):
+        self.chat.user = User.get_by_id(user_id)
+        self.chat.save()
+
+        if self.chat.bot is None:
+            self.select_bot_dialog.open(self.chat.bot_id)
+        elif self.ids.chat_screen_sent_messages_container.children:
+            last_sent_message_widget = (
+                None
+                if not self.ids.chat_screen_sent_messages_container.children
+                else self.ids.chat_screen_sent_messages_container.children[0]
+            )
+            if last_sent_message_widget is None or isinstance(
+                last_sent_message_widget, UserMessageCard
+            ):
+                self.chat.bot.chat_complete(self.chat, self.on_chat_completed)
+
+    def select_bot(self):
+        if self.has_valid_data():
+            self.select_bot_dialog.open(self.chat.bot_id)
+
+    def on_bot_selected(self, bot_id):
+        self.chat.bot = Bot.get(Bot.id == bot_id)
+        self.chat.save()
+
+        last_sent_message_widget = (
+            None
+            if not self.ids.chat_screen_sent_messages_container.children
+            else self.ids.chat_screen_sent_messages_container.children[0]
+        )
+
+        if last_sent_message_widget is None or isinstance(
+            last_sent_message_widget, UserMessageCard
+        ):
+            self.chat.bot.chat_complete(self.chat, self.on_chat_completed)
+
+    def on_chat_completed(self, completion):
+        message = AssistantMessage.create(chat=self.chat, completion=completion)
+        message_widget = self.recycling_bin.get_message_widget(message, self.chat)
+        self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
+
+    def on_user_message_sent(self, message_widget, is_message_sent):
+        if not is_message_sent:
+            return
+
+        self.ids.chat_screen_unsent_messages_container.remove_widget(message_widget)
+        self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
+
+        self.chat.bot.chat_complete(self.chat, self.on_chat_completed)
+
+    def load_chat_messages(self):
+        message_widgets = (
+            self.ids.chat_screen_sent_messages_container.children
+            + self.ids.chat_screen_unsent_messages_container.children
+        )
+        self.recycling_bin.recycle_message_widgets(message_widgets)
+
+        for message in self.chat.messages:
+            if isinstance(message, UserMessage):
+                message_widget = self.recycling_bin.get_message_widget(
+                    message, self.chat
                 )
-            elif message["role"] == "assistant":
-                self.ids.chat_screen_messages_container.add_widget(
-                    AssistantMessageCard(
-                        completion_text=message.get("completion_text", ""),
-                        completion_received_at=message.get(
-                            "completion_received_at", ""
-                        ),
-                        speech_audio_file=message.get("speech_audio_file", ""),
-                        speech_audio_received_at=message.get(
-                            "speech_audio_received_at", ""
-                        ),
+                message_widget.bind(is_message_sent=self.on_user_message_sent)
+
+                if message.sent_at is None:
+                    self.ids.chat_screen_unsent_messages_container.add_widget(
+                        message_widget
                     )
+                    continue
+            elif isinstance(message, AssistantMessage):
+                message_widget = self.recycling_bin.get_message_widget(
+                    message, self.chat
                 )
+
+            self.ids.chat_screen_sent_messages_container.add_widget(message_widget)
+
+        self.ids.chat_screen_scroll.scroll_y = 1
+
+    def on_pre_enter(self):
+        self.chat = Chat.get_by_id(self.chat_id)
+
+        self.chat_title = self.chat.title
+        self.chat_summary = self.chat.summary
+
+        self.load_chat_messages()
+
+        last_sent_message_widget = (
+            None
+            if not self.ids.chat_screen_sent_messages_container.children
+            else self.ids.chat_screen_sent_messages_container.children[0]
+        )
+        if self.chat.user is None:
+            self.select_user_dialog.open(self.chat.user_id)
+            # if both and user and bot are not selected, the select bot dialog will be opened after the the user is selected
+        elif self.chat.bot is None:
+            self.select_bot_dialog.open(self.chat.bot_id)
+        elif last_sent_message_widget is None or isinstance(
+            last_sent_message_widget, UserMessageCard
+        ):
+            self.chat.bot.chat_complete(self.chat, self.on_chat_completed)
+
+    def save_chat(self):
+        self.chat_title = self.chat_title.strip()
+
+        if self.chat_title == "":
+            raise ValueError("Chat title cannot be empty")
+
+        self.chat.title = self.chat_title
+        self.chat.summary = self.chat_summary
+
+        self.chat.save()
+
+    def has_valid_data(self):
+        try:
+            self.save_chat()
+        except ValueError as e:
+            self.invalid_data_error_snackbar.text = str(e)
+            self.invalid_data_error_snackbar.open()
+
+            return False
+
+        return True
+
+    def switch_back(self):
+        if not self.has_valid_data():
+            return
+
+        self.manager.switch_back()
 
     def scroll_to_bottom(self):
-        # If the chat is longer than the screen, scroll to the bottom
-        if (
-            self.height < self.ids.chat_screen_message_container.height
-            and self.ids.chat_screen_scroll.scroll_y != 0
-        ):
-            self.ids.chat_screen_scroll.scroll_y = 0
+        if self.height >= self.ids.chat_screen_message_container.height:
+            return
+
+        anim = Animation(
+            scroll_y=self.ids.chat_screen_message_container.y
+            / self.ids.chat_screen_message_container.height,
+            d=0.5,
+            t="out_quad",
+        )
+        anim.start(self.ids.chat_screen_scroll)
 
     def summarize_chat(self):
         print("Summarizing chat")  # TODO: Implement chat summarization
 
         self.ids.chat_screen_scroll.scroll_y = 1
 
-    def _create_new_user(self, instance):
-        self.select_user_dialog.dismiss()
-
-        self.manager.switch_screen("user_screen")
-
-    def _create_new_bot(self, instance):
-        self.select_bot_dialog.dismiss()
-
-        self.manager.switch_screen("bot_screen")
-
-    def select_user(self):
-        self.select_user_dialog.update_items(
-            [
-                {
-                    "user_id": 1,
-                    "user_name": "John Doe",
-                },
-                {
-                    "user_id": 2,
-                    "user_name": "Jane Doe",
-                },
-                {
-                    "user_id": 3,
-                    "user_name": "Alice Doe",
-                },
-            ]
-        )
-
-        self.select_user_dialog.open()
-
-    def select_bot(self):
-        self.select_bot_dialog.update_items(
-            [
-                {
-                    "bot_id": 1,
-                    "bot_name": "Bot 1",
-                },
-                {
-                    "bot_id": 2,
-                    "bot_name": "Bot 2",
-                },
-                {
-                    "bot_id": 3,
-                    "bot_name": "Bot 3",
-                },
-            ]
-        )
-
-        self.select_bot_dialog.open()
-
     def delete_chat(self):
-        print("Deleting chat")  # TODO: Implement chat deletion
+        self.chat.delete_instance()
 
         self.delete_chat_dialog.dismiss()
         self.manager.switch_back()
