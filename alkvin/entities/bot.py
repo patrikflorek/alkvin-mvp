@@ -50,7 +50,7 @@ class Bot(BaseModel):
             transcription_language=self.transcription_language,
             transcription_prompt=self.transcription_prompt,
             transcription_temperature=self.transcription_temperature,
-            completion_prompt=self.generation_prompt,
+            completion_prompt=self.completion_prompt,
             completion_temperature=self.completion_temperature,
             summarization_prompt=self.summarization_prompt,
             speech_voice=self.speech_voice,

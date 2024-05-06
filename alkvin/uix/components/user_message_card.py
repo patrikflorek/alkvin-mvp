@@ -86,6 +86,7 @@ Builder.load_string(
             MDIconButton:
                 icon: "send"
                 icon_size: "24dp"
+                disabled: not root.user_transcript
                 
                 on_release: root.send_message()    
 """
@@ -123,6 +124,9 @@ class UserMessageCard(MDCard):
         self.user_transcript = self.message.transcript
 
     def send_message(self):
+        if not self.user_transcript:
+            return
+
         self.message.sent_at = datetime.now()
         self.message.save()
 

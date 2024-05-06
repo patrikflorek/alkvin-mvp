@@ -72,7 +72,7 @@ class Chat(BaseModel):
         from .user_message import UserMessage
         from .assistant_message import AssistantMessage
 
-        messages = [{"role": "system", "content": self.bot.generation_prompt}]
+        messages = [{"role": "system", "content": self.bot.completion_prompt}]
 
         if self.user.introduction:
             messages.append({"role": "user", "content": self.user.introduction})

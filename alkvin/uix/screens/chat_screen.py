@@ -86,19 +86,15 @@ Builder.load_string(
 
                     MDTextField:
                         hint_text: "Title"
-                        helper_text_mode: "on_focus"
                         required: True
                         text: root.chat_title
                         on_text: root.chat_title = self.text
-                        helper_text_mode: "on_error"
                         helper_text: "Cannot be empty"
                         error: True if root.chat_title == "" else False
 
                     MDTextField:
                         hint_text: "Summary"
-                        helper_text_mode: "on_focus"
                         multiline: True
-                        required: True
                         text: root.chat_summary
                         on_text: root.chat_summary = self.text
 

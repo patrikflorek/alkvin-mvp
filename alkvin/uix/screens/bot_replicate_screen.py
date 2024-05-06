@@ -58,7 +58,6 @@ Builder.load_string(
                     required: True
                     on_text: root.bot_name = self.text
                     hint_text: "Name"
-                    helper_tex_mode: "on_error"
                     helper_text: "Cannot be empty"
                     error: True if root.bot_name == "" else False
 
@@ -79,7 +78,6 @@ Builder.load_string(
                     text: root.bot_transcription_temperature
                     on_text: root.validate_transcription_temperature(self)
                     hint_text: "Transcription temperature"
-                    helper_tex_mode: "on_error"
                     helper_text: "Must be a decimal number between 0.0 and 1.0"
                 
                 MDTextField:
@@ -94,7 +92,6 @@ Builder.load_string(
                     text: root.bot_completion_temperature
                     on_text: root.validate_completion_temperature(self)
                     hint_text: "Text generation temperature"
-                    helper_tex_mode: "on_error"
                     helper_text: "Must be a decimal number between 0.0 and 2.0"
 
                 MDTextField:
@@ -211,7 +208,7 @@ class BotReplicateScreen(MDScreen):
         except ValueError:
             raise ValueError("Transcription temperature must be a number")
         else:
-            if not (0.0 < self.bot.transcription_temperature < 1.0):
+            if not (0.0 <= self.bot.transcription_temperature <= 1.0):
                 raise ValueError(
                     "Transcription temperature must be between 0.0 and 1.0"
                 )
@@ -222,7 +219,7 @@ class BotReplicateScreen(MDScreen):
         except ValueError:
             raise ValueError("Text generation temperature must be a number")
         else:
-            if not (0.0 < self.bot.completion_temperature < 2.0):
+            if not (0.0 <= self.bot.completion_temperature <= 2.0):
                 raise ValueError(
                     "Text generation temperature must be between 0.0 and 2.0"
                 )
