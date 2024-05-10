@@ -15,6 +15,8 @@ from kivy.properties import StringProperty
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.behaviors import CommonElevationBehavior
 
+from alkvin.audio import get_audio_bus
+
 from alkvin.config import AUDIO_RECORDING_DIR
 
 
@@ -72,21 +74,21 @@ class AudioRecorderBox(MDBoxLayout, CommonElevationBehavior):
 
     state = StringProperty("stopped")
 
-    recording_path = None
+    recording_path = StringProperty(allownone=True)
+
+    def __init__(self, **kwargs):
+        super(AudioRecorderBox, self).__init__(**kwargs)
+        self._audio_bus = get_audio_bus()
 
     def on_state(self, instance, value):
         if value == "recording":
-            os.makedirs(AUDIO_RECORDING_DIR, exist_ok=True)
-            self.recording_path = os.path.join(
-                AUDIO_RECORDING_DIR, f"{uuid4().hex}.wav"
-            )
-
-            with open(self.recording_path, "wb") as audio_file:
-                audio_file.write(b"")
-
-        if value == "stopped":
-            self.on_recording_finished_callback(self.recording_path)
             self.recording_path = None
 
-    def on_recording_finished_callback(self, recording_path):
-        """Implemented in the caller class."""
+            os.makedirs(AUDIO_RECORDING_DIR, exist_ok=True)
+            recording_path = os.path.join(
+                AUDIO_RECORDING_DIR, f"user_{uuid4().hex[:8]}.mp3"
+            )
+            self._audio_bus.record(self, recording_path)
+
+        elif value == "stopped":
+            self._audio_bus.stop()

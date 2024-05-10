@@ -26,6 +26,7 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.screen import MDScreen
 
+from alkvin.uix.components.audio_recorder_box import AudioRecorderBox
 from alkvin.uix.components.invalid_data_error_snackbar import InvalidDataErrorSnackbar
 from alkvin.uix.components.select_bot_dialog import SelectBotDialog
 from alkvin.uix.components.select_user_dialog import SelectUserDialog
@@ -42,9 +43,6 @@ from alkvin.entities.assistant_message import AssistantMessage
 
 Builder.load_string(
     """
-#:import AudioRecorderBox alkvin.uix.components.audio_recorder_box.AudioRecorderBox
-
-        
 <ChatScreen>:
     MDBoxLayout:
         orientation: "vertical"
@@ -121,10 +119,10 @@ Builder.load_string(
                     spacing: "28dp"
                     adaptive_height: True
                 
-    AudioRecorderBox:
-        id: chat_screen_audio_recorder
-
-        pos_hint: {"y": 0}
+    MDBoxLayout:
+        id: chat_screen_audio_recorder_container
+        orientation: "vertical"
+        adaptive_height: True
 """
 )
 
@@ -143,11 +141,9 @@ class ChatScreen(MDScreen):
         self.recycling_bin = get_recycling_bin()
 
         self.invalid_data_error_snackbar = InvalidDataErrorSnackbar()
-
         self.select_user_dialog = SelectUserDialog(self.on_user_selected)
 
         self.select_bot_dialog = SelectBotDialog(self.on_bot_selected)
-
         self.delete_chat_dialog = MDDialog(
             title="Delete chat",
             text="Are you sure you want to delete this chat?",
@@ -164,11 +160,20 @@ class ChatScreen(MDScreen):
             ],
         )
 
-        self.ids.chat_screen_audio_recorder.on_recording_finished_callback = (
-            self.create_user_message
+        self.audio_recorder_box = AudioRecorderBox(
+            pos_hint={"y": 0},
+        )
+        self.audio_recorder_box.bind(recording_path=self.create_user_message)
+        self.ids.chat_screen_audio_recorder_container.add_widget(
+            self.audio_recorder_box
         )
 
-    def create_user_message(self, audio_recording_path):
+    def create_user_message(self, audio_recorder_box, audio_recording_path):
+        print("Creating user message", audio_recording_path, audio_recorder_box.state)
+        return
+        if audio_recording_path is None:
+            return
+
         new_audio_file_name = f"user_{datetime.now().isoformat()}.opus"
         new_audio_file_path = os.path.join(self.chat.audio_dir, new_audio_file_name)
         shutil.move(audio_recording_path, new_audio_file_path)
