@@ -160,21 +160,17 @@ class ChatScreen(MDScreen):
             ],
         )
 
-        self.audio_recorder_box = AudioRecorderBox(
-            pos_hint={"y": 0},
-        )
+        self.audio_recorder_box = AudioRecorderBox(pos_hint={"y": 0})
         self.audio_recorder_box.bind(recording_path=self.create_user_message)
         self.ids.chat_screen_audio_recorder_container.add_widget(
             self.audio_recorder_box
         )
 
     def create_user_message(self, audio_recorder_box, audio_recording_path):
-        print("Creating user message", audio_recording_path, audio_recorder_box.state)
-        return
         if audio_recording_path is None:
             return
 
-        new_audio_file_name = f"user_{datetime.now().isoformat()}.opus"
+        new_audio_file_name = f"user_{datetime.now().strftime('%Y%m%d%H%M%S')}.mp3"
         new_audio_file_path = os.path.join(self.chat.audio_dir, new_audio_file_name)
         shutil.move(audio_recording_path, new_audio_file_path)
 

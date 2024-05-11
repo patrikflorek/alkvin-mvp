@@ -11,6 +11,8 @@ from kivy.properties import ListProperty, StringProperty
 
 from kivymd.uix.boxlayout import MDBoxLayout
 
+from alkvin.audio import get_audio_bus
+
 
 Builder.load_string(
     """
@@ -27,11 +29,12 @@ Builder.load_string(
             radius: (dp(24),)
 
     MDIconButton:
+        id: play_button
         icon: "play" if root.state == "stopped" else "stop"
         theme_icon_color: "Custom"
         icon_color: (0.2, 0.2, 0.2, 0.6)
         
-        on_release: root.toggle_playing()  # TODO: Implement play audio
+        on_release: root.toggle_playing()
 
     MDBoxLayout:
         padding: dp(10), dp(20), dp(30), dp(20)
@@ -52,10 +55,19 @@ class AudioPlayerBox(MDBoxLayout):
     audio_path = StringProperty()
     progress_bar_color = ListProperty([0.2, 0.2, 0.2, 1])
 
-    def toggle_playing(self):
-        if self.state == "stopped":
-            self.state = "playing"
-            print(f"Start playing audio {self.audio_path}")
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.audio_bus = get_audio_bus()
+
+    def on_state(self, instance, value):
+        if value == "playing":
+            self.ids.play_button.icon = "stop"
         else:
-            self.state = "stopped"
-            print(f"Stop playing audio {self.audio_path}")
+            self.ids.play_button.icon = "play"
+
+    def toggle_playing(self):
+        if self.state == "stopped" and self.audio_bus.state != "recording":
+            self.audio_bus.play(self, self.audio_path)
+        elif self.state == "playing":
+            self.audio_bus.stop(self)

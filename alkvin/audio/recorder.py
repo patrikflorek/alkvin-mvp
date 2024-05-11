@@ -47,8 +47,13 @@ class AudioRecorder:
         return in_data, pyaudio.paContinue
 
     def stop(self):
+        import os
+
         audio_segment = AudioSegment(
-            b"".join(self._frames), sample_width=2, frame_rate=44100, channels=1
+            b"".join(self._frames),
+            sample_width=2,
+            frame_rate=self.RATE,
+            channels=self.CHANNELS,
         )
-        audio_segment.export("test.mp3", format="mp3")
+        audio_segment.export(self._recording_path, format="mp3")
         self.on_recording_finished(self._recording_path)

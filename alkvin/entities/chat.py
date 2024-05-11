@@ -20,8 +20,7 @@ from alkvin.entities.bot import Bot
 
 from alkvin.db import BaseModel
 
-
-CHATS_AUDIO_DIR = os.path.join("resources", "audio")
+from alkvin.config import CHATS_AUDIO_DIR
 
 
 class Chat(BaseModel):

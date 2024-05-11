@@ -34,3 +34,7 @@ class UserMessage(BaseModel):
     @property
     def audio_path(self):
         return os.path.join(self.chat.audio_dir, self.audio_file)
+
+    def delete_instance(self):
+        if os.path.exists(self.audio_path):
+            os.remove(self.audio_path)
