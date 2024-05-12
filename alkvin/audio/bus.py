@@ -73,8 +73,6 @@ class AudioBus:
         if self._state == "playing":
             self._audio_player.stop()
 
-        self._state = "idle"
-
     def _on_recording_finished(self, recording_path):
         if self._active_audio_widget is None:
             return
@@ -82,6 +80,7 @@ class AudioBus:
         self._active_audio_widget.recording_path = recording_path
 
         self._active_audio_widget = None
+        self._state = "idle"
 
     def _on_playback_finished(self):
         if self._active_audio_widget is None:
@@ -89,3 +88,4 @@ class AudioBus:
 
         self._active_audio_widget.state = "stopped"
         self._active_audio_widget = None
+        self._state = "idle"
