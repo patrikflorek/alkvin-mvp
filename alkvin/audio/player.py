@@ -1,55 +1,56 @@
 from kivy.clock import Clock
 
 from pydub import AudioSegment
-from pydub.playback import _play_with_simpleaudio
+from pydub.playback import play
 
 
 class AudioPlayer:
     def __init__(self, on_playback_finished):
         self._on_playback_finished = on_playback_finished
 
+        self.audio = None
         self.playback = None
-        self.playback_check_timer = None
-
-        self.audio_segment = None
+        self.position = 0  # in milliseconds
+        self.is_playing = False
 
     @property
     def playing_time(self):
         if self.playback is None:
             return 0
 
-        return self.playback.position / 1000
+        return self.position / 1000
 
     @property
     def total_time(self):
         if self.playback is None:
             return 0
 
-        return self.playback.duration / 1000
+        return len(self.audio) / 1000
 
-    def _check_playback(self, dt):
-        if self.playback is None:
-            return
+    def _play_and_check(self, dt):
+        chunk_size = dt * 100  # in milliseconds
+        chunk = self.audio[self.position : self.position + chunk_size]
+        play(chunk)
+        self.position += chunk_size
 
-        if (
-            not self.playback.is_playing()
-            or self.playback.position >= self.playback.duration
-        ):
+        if not self.is_playing or self.position >= len(self.audio):
             self.stop()
 
     def play(self, audio_path):
-        audio = AudioSegment.from_file(audio_path, format="mp3")
+        self.audio = AudioSegment.from_file(audio_path, format="mp3")
+        self.position = 0
+        self.is_playing = True
+        # play(self.audio)
 
-        self.playback = _play_with_simpleaudio(audio)
-
-        self.playback_check_timer = Clock.schedule_interval(self._check_playback, 0.1)
+        self.playback = Clock.schedule_interval(self._play_and_check, 0.5)
 
     def stop(self):
-        if self.playback is None:
-            return
+        self.is_playing = False
+        if self.playback is not None:
+            self.playback.unschedule(self.playback)
 
-        self.playback_check_timer.cancel()
-        self.playback.stop()
         self.playback = None
+        self.audio = None
+        self.position = 0
 
         self._on_playback_finished()
