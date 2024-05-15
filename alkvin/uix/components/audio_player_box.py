@@ -6,6 +6,7 @@ This model defines the AudioPlayerBox class, which is a custom box layout
 widget used for playing audio files.
 """
 
+from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.properties import ListProperty, StringProperty
 
@@ -39,6 +40,7 @@ Builder.load_string(
     MDBoxLayout:
         padding: dp(10), dp(20), dp(30), dp(20)
         MDProgressBar:
+            id: progress_bar
             min: 0.1
             max: 100
             value: .1
@@ -59,12 +61,31 @@ class AudioPlayerBox(MDBoxLayout):
         super().__init__(**kwargs)
 
         self.audio_bus = get_audio_bus()
+        self.progress_bar_update_schedule = None
+
+    def _update_progress_bar(self, dt):
+
+        progress = (
+            self.ids.progress_bar.max
+            if self.audio_bus.audio_total_time == 0
+            else (self.audio_bus.audio_passed_time / self.audio_bus.audio_total_time)
+        )
+
+        self.ids.progress_bar.value = progress * (
+            self.ids.progress_bar.max - self.ids.progress_bar.min
+        )
 
     def on_state(self, instance, value):
         if value == "playing":
             self.ids.play_button.icon = "stop"
-        else:
+            self.progress_bar_update_schedule = Clock.schedule_interval(
+                self._update_progress_bar, 0.2
+            )
+        elif value == "stopped":
             self.ids.play_button.icon = "play"
+            self.progress_bar_update_schedule.cancel()
+            self.progress_bar_update_schedule = None
+            self.ids.progress_bar.value = self.ids.progress_bar.min
 
     def toggle_playing(self):
         if self.state == "stopped" and self.audio_bus.state != "recording":

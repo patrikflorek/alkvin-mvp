@@ -28,7 +28,7 @@ class AudioBus:
             return self._audio_recorder.recording_time
 
         if self._state == "playing":
-            return self._audio_recorder.playing_time
+            return self._audio_player.playing_time
 
     @property
     def audio_total_time(self):
